@@ -1,10 +1,12 @@
 // Template Page Editor JavaScript Application
+// Work Order #8: TextComponent Data Model Structure Integration
 
 class TemplatePageEditor {
     constructor() {
         this.currentSection = 'editor';
         this.currentTool = null;
         this.templates = [];
+        this.currentPage = null;
         this.init();
     }
 
@@ -134,10 +136,48 @@ class TemplatePageEditor {
 
         switch (type) {
             case 'text':
-                element.innerHTML = '<input type="text" value="Click to edit text" class="text-input">';
+                // Create TextComponent using structured data model
+                const textComponent = TextComponent.createDefault('Click to edit text');
+                const textData = textComponent.toJSON();
+                
+                // Create rich text editable element
+                const textEditor = document.createElement('div');
+                textEditor.className = 'text-editor';
+                textEditor.contentEditable = true;
+                textEditor.innerHTML = textComponent.getAsHtml();
+                textEditor.style.width = '200px';
+                textEditor.style.minHeight = '30px';
+                textEditor.style.border = '1px solid transparent';
+                textEditor.style.padding = '5px';
+                textEditor.style.borderRadius = '3px';
+                textEditor.setAttribute('data-component-id', textData.id);
+                textEditor.setAttribute('data-component-type', 'TextComponent');
+                
+                // Add focus/blur handlers for rich text editing
+                textEditor.addEventListener('focus', () => {
+                    textEditor.style.border = '1px solid #2563eb';
+                    textEditor.style.backgroundColor = '#f8fafc';
+                });
+                
+                textEditor.addEventListener('blur', () => {
+                    textEditor.style.border = '1px solid transparent';
+                    textEditor.style.backgroundColor = 'transparent';
+                    this.updateTextComponentContent(textData.id, textEditor.innerHTML);
+                });
+                
+                textEditor.addEventListener('input', () => {
+                    // Real-time content update for better UX
+                    this.updateTextComponentContent(textData.id, textEditor.innerHTML);
+                });
+                
+                element.appendChild(textEditor);
                 element.style.width = '200px';
-                element.style.height = '30px';
+                element.style.minHeight = '30px';
+                
+                // Store component data
+                element.setAttribute('data-component', JSON.stringify(textData));
                 break;
+                
             case 'image':
                 element.innerHTML = '<div class="image-placeholder"><i class="fas fa-image"></i><span>Image</span></div>';
                 element.style.width = '200px';
@@ -242,17 +282,106 @@ class TemplatePageEditor {
     }
 
     saveTemplate() {
-        const canvas = document.getElementById('canvas');
-        const templateData = {
-            id: Date.now(),
-            name: `Template ${this.templates.length + 1}`,
-            html: canvas.innerHTML,
-            createdAt: new Date().toISOString()
-        };
+        try {
+            // Create a new Page instance with structured data
+            const page = this.serializeCanvasToPage();
+            
+            const templateData = {
+                id: Date.now(),
+                name: `Template ${this.templates.length + 1}`,
+                page: page.toJSON(),
+                html: document.getElementById('canvas').innerHTML, // Keep for backward compatibility
+                createdAt: new Date().toISOString()
+            };
 
-        this.templates.push(templateData);
-        this.saveTemplatesToStorage();
-        this.showNotification('Template saved successfully!');
+            this.templates.push(templateData);
+            this.saveTemplatesToStorage();
+            this.showNotification('Template saved successfully!');
+        } catch (error) {
+            console.error('Error saving template:', error);
+            this.showNotification('Error saving template: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Serialize canvas content to Page data model
+     * @returns {Page} Page instance with components
+     */
+    serializeCanvasToPage() {
+        const canvas = document.getElementById('canvas');
+        const page = new Page({
+            templateId: 'default-template'
+        });
+
+        // Extract components from canvas elements
+        const canvasElements = canvas.querySelectorAll('.canvas-element');
+        canvasElements.forEach((element, index) => {
+            const componentData = element.getAttribute('data-component');
+            
+            if (componentData) {
+                try {
+                    const component = JSON.parse(componentData);
+                    component.order = index + 1;
+                    page.addComponent(component);
+                } catch (error) {
+                    console.warn('Failed to parse component data:', error);
+                }
+            } else {
+                // Fallback for elements without structured data
+                const componentType = this.getElementComponentType(element);
+                if (componentType) {
+                    const component = {
+                        id: `component-${Date.now()}-${index}`,
+                        type: componentType,
+                        data: this.extractElementData(element),
+                        order: index + 1
+                    };
+                    page.addComponent(component);
+                }
+            }
+        });
+
+        return page;
+    }
+
+    /**
+     * Determine component type from DOM element
+     * @param {Element} element - DOM element
+     * @returns {string|null} Component type
+     */
+    getElementComponentType(element) {
+        if (element.querySelector('.text-editor')) return 'TextComponent';
+        if (element.querySelector('.image-placeholder')) return 'ImageComponent';
+        if (element.querySelector('.canvas-button')) return 'ButtonComponent';
+        if (element.querySelector('.container-element')) return 'ContainerComponent';
+        return null;
+    }
+
+    /**
+     * Extract data from DOM element
+     * @param {Element} element - DOM element
+     * @returns {Object} Component data
+     */
+    extractElementData(element) {
+        const textEditor = element.querySelector('.text-editor');
+        if (textEditor) {
+            return {
+                content: {
+                    format: 'html',
+                    data: textEditor.innerHTML,
+                    metadata: {
+                        version: '1.0',
+                        created: new Date().toISOString(),
+                        lastModified: new Date().toISOString()
+                    }
+                }
+            };
+        }
+        
+        // Fallback for other component types
+        return {
+            element: element.innerHTML
+        };
     }
 
     createNewTemplate() {
@@ -304,8 +433,154 @@ class TemplatePageEditor {
         const template = this.templates.find(t => t.id === id);
         if (template) {
             this.switchSection('editor');
+            this.clearCanvas();
+            
+            // Load structured data if available, otherwise fallback to HTML
+            if (template.page) {
+                this.loadPageFromData(template.page);
+            } else if (template.html) {
+                // Fallback for legacy templates
+                const canvas = document.getElementById('canvas');
+                canvas.innerHTML = template.html;
+                this.convertLegacyElementsToStructured();
+            }
+        }
+    }
+
+    /**
+     * Load page from structured data
+     * @param {Object} pageData - Page data object
+     */
+    loadPageFromData(pageData) {
+        try {
+            const page = Page.fromJSON(pageData);
+            this.currentPage = page;
+            
             const canvas = document.getElementById('canvas');
-            canvas.innerHTML = template.html;
+            const orderedComponents = page.getOrderedComponents();
+            
+            orderedComponents.forEach(component => {
+                const element = this.createElementFromComponent(component);
+                canvas.appendChild(element);
+            });
+        } catch (error) {
+            console.error('Error loading page data:', error);
+            this.showNotification('Error loading template: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Create DOM element from component data
+     * @param {Object} component - Component data
+     * @returns {Element} DOM element
+     */
+    createElementFromComponent(component) {
+        const element = document.createElement('div');
+        element.className = `canvas-element ${component.type.toLowerCase()}-element`;
+        element.style.position = 'absolute';
+        element.style.left = '50px';
+        element.style.top = `${50 + (component.order * 60)}px`;
+        element.setAttribute('data-component', JSON.stringify(component));
+
+        switch (component.type) {
+            case 'TextComponent':
+                const textComponent = new TextComponent(component);
+                const textEditor = document.createElement('div');
+                textEditor.className = 'text-editor';
+                textEditor.contentEditable = true;
+                textEditor.innerHTML = textComponent.getAsHtml();
+                textEditor.style.width = '200px';
+                textEditor.style.minHeight = '30px';
+                textEditor.style.border = '1px solid transparent';
+                textEditor.style.padding = '5px';
+                textEditor.style.borderRadius = '3px';
+                textEditor.setAttribute('data-component-id', component.id);
+                textEditor.setAttribute('data-component-type', 'TextComponent');
+                
+                // Add event handlers
+                textEditor.addEventListener('focus', () => {
+                    textEditor.style.border = '1px solid #2563eb';
+                    textEditor.style.backgroundColor = '#f8fafc';
+                });
+                
+                textEditor.addEventListener('blur', () => {
+                    textEditor.style.border = '1px solid transparent';
+                    textEditor.style.backgroundColor = 'transparent';
+                    this.updateTextComponentContent(component.id, textEditor.innerHTML);
+                });
+                
+                textEditor.addEventListener('input', () => {
+                    this.updateTextComponentContent(component.id, textEditor.innerHTML);
+                });
+                
+                element.appendChild(textEditor);
+                break;
+                
+            case 'ImageComponent':
+                element.innerHTML = '<div class="image-placeholder"><i class="fas fa-image"></i><span>Image</span></div>';
+                element.style.width = '200px';
+                element.style.height = '150px';
+                break;
+                
+            case 'ButtonComponent':
+                element.innerHTML = '<button class="canvas-button">Button</button>';
+                element.style.width = '120px';
+                element.style.height = '40px';
+                break;
+                
+            case 'ContainerComponent':
+                element.innerHTML = '<div class="container-element">Container</div>';
+                element.style.width = '300px';
+                element.style.height = '200px';
+                element.style.border = '1px dashed #cbd5e1';
+                element.style.backgroundColor = '#f8fafc';
+                break;
+                
+            default:
+                element.innerHTML = `<div class="unknown-component">Unknown Component: ${component.type}</div>`;
+                element.style.width = '200px';
+                element.style.height = '50px';
+        }
+
+        this.makeDraggable(element);
+        return element;
+    }
+
+    /**
+     * Convert legacy elements to structured data
+     */
+    convertLegacyElementsToStructured() {
+        const canvas = document.getElementById('canvas');
+        const elements = canvas.querySelectorAll('.canvas-element');
+        
+        elements.forEach((element, index) => {
+            if (!element.getAttribute('data-component')) {
+                const componentType = this.getElementComponentType(element);
+                if (componentType) {
+                    const component = {
+                        id: `legacy-${Date.now()}-${index}`,
+                        type: componentType,
+                        data: this.extractElementData(element),
+                        order: index + 1
+                    };
+                    element.setAttribute('data-component', JSON.stringify(component));
+                }
+            }
+        });
+    }
+
+    /**
+     * Update TextComponent content
+     * @param {string} componentId - Component ID
+     * @param {string} content - New content
+     */
+    updateTextComponentContent(componentId, content) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateTextComponentContent(componentId, content);
+            } catch (error) {
+                console.warn('Failed to update text component:', error);
+            }
         }
     }
 
@@ -323,26 +598,30 @@ class TemplatePageEditor {
         localStorage.setItem('templatePageEditor_theme', theme);
     }
 
-    showNotification(message) {
+    showNotification(message, type = 'success') {
         // Create a simple notification
         const notification = document.createElement('div');
+        const backgroundColor = type === 'error' ? '#ef4444' : '#10b981';
+        
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #10b981;
+            background: ${backgroundColor};
             color: white;
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            max-width: 300px;
+            word-wrap: break-word;
         `;
         notification.textContent = message;
         document.body.appendChild(notification);
 
         setTimeout(() => {
             notification.remove();
-        }, 3000);
+        }, type === 'error' ? 5000 : 3000);
     }
 }
 

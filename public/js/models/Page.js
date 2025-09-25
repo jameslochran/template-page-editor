@@ -1,23 +1,26 @@
 /**
- * Page Model
- * Work Order #7: Implement Page Data Model with Component Storage
- * Work Order #8: TextComponent Data Model Structure Integration
+ * Page Model - Client Side
+ * Work Order #8: Implement Page Data Model Structure
  * 
- * This model provides object-relational mapping for the Page entity,
- * enabling application-level interaction with page data and component instances,
- * including rich text components with structured content management.
+ * This model provides structured data management for pages with components,
+ * including TextComponent integration for rich text content.
  */
-
-const { v4: uuidv4 } = require('uuid');
-const TextComponent = require('./TextComponent');
 
 class Page {
     constructor(data = {}) {
-        this.id = data.id || uuidv4();
+        this.id = data.id || this.generateId();
         this.templateId = data.templateId || data.template_id;
         this.components = data.components || [];
-        this.createdAt = data.createdAt || data.created_at || new Date();
-        this.updatedAt = data.updatedAt || data.updated_at || new Date();
+        this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
+        this.updatedAt = data.updatedAt || data.updated_at || new Date().toISOString();
+    }
+
+    /**
+     * Generate a unique ID
+     * @returns {string} Unique ID
+     */
+    generateId() {
+        return 'page-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     }
 
     /**
@@ -30,8 +33,6 @@ class Page {
         // Validate templateId
         if (!this.templateId) {
             errors.push('templateId is required');
-        } else if (!this.isValidUUID(this.templateId)) {
-            errors.push('templateId must be a valid UUID');
         }
 
         // Validate components array
@@ -166,7 +167,7 @@ class Page {
         }
 
         this.components.push(component);
-        this.updatedAt = new Date();
+        this.updatedAt = new Date().toISOString();
         return true;
     }
 
@@ -202,7 +203,7 @@ class Page {
         // Update the component
         const index = this.components.findIndex(c => c.id === componentId);
         this.components[index] = updatedComponent;
-        this.updatedAt = new Date();
+        this.updatedAt = new Date().toISOString();
         return true;
     }
 
@@ -218,7 +219,7 @@ class Page {
         }
 
         this.components.splice(index, 1);
-        this.updatedAt = new Date();
+        this.updatedAt = new Date().toISOString();
         return true;
     }
 
@@ -332,78 +333,37 @@ class Page {
     }
 
     /**
-     * Search text content across all TextComponents
-     * @param {string} searchTerm - Term to search for
-     * @param {boolean} caseSensitive - Case sensitive search (default: false)
-     * @returns {Array} Array of matching TextComponents with context
+     * Reorder components
+     * @param {Array} componentIds - Array of component IDs in new order
+     * @returns {boolean} Success status
      */
-    searchTextContent(searchTerm, caseSensitive = false) {
-        const results = [];
-        const searchRegex = new RegExp(
-            caseSensitive ? searchTerm : searchTerm.toLowerCase(),
-            'g'
-        );
+    reorderComponents(componentIds) {
+        const reorderedComponents = [];
+        
+        componentIds.forEach((id, index) => {
+            const component = this.getComponentById(id);
+            if (!component) {
+                throw new Error(`Component with ID '${id}' not found`);
+            }
+            reorderedComponents.push({
+                ...component,
+                order: index + 1
+            });
+        });
 
-        this.getTextComponents().forEach(textComponent => {
-            const content = caseSensitive ? 
-                textComponent.getAsPlainText() : 
-                textComponent.getAsPlainText().toLowerCase();
-
-            if (searchRegex.test(content)) {
-                results.push({
-                    component: textComponent,
-                    matches: this.getTextMatches(textComponent.getAsPlainText(), searchTerm, caseSensitive)
+        // Add any remaining components that weren't in the reorder list
+        this.components.forEach(component => {
+            if (!componentIds.includes(component.id)) {
+                reorderedComponents.push({
+                    ...component,
+                    order: reorderedComponents.length + 1
                 });
             }
         });
 
-        return results;
-    }
-
-    /**
-     * Get text matches with context
-     * @param {string} text - Text to search in
-     * @param {string} searchTerm - Term to find
-     * @param {boolean} caseSensitive - Case sensitive search
-     * @returns {Array} Array of match objects with context
-     */
-    getTextMatches(text, searchTerm, caseSensitive = false) {
-        const matches = [];
-        const searchText = caseSensitive ? text : text.toLowerCase();
-        const term = caseSensitive ? searchTerm : searchTerm.toLowerCase();
-        const contextLength = 50;
-
-        let index = 0;
-        while ((index = searchText.indexOf(term, index)) !== -1) {
-            const start = Math.max(0, index - contextLength);
-            const end = Math.min(text.length, index + term.length + contextLength);
-            const context = text.substring(start, end);
-            
-            matches.push({
-                index: index,
-                context: context,
-                highlighted: this.highlightMatch(context, searchTerm, caseSensitive)
-            });
-
-            index += term.length;
-        }
-
-        return matches;
-    }
-
-    /**
-     * Highlight search term in context
-     * @param {string} context - Text context
-     * @param {string} searchTerm - Search term
-     * @param {boolean} caseSensitive - Case sensitive search
-     * @returns {string} Highlighted context
-     */
-    highlightMatch(context, searchTerm, caseSensitive = false) {
-        const regex = new RegExp(
-            `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
-            caseSensitive ? 'g' : 'gi'
-        );
-        return context.replace(regex, '<mark>$1</mark>');
+        this.components = reorderedComponents;
+        this.updatedAt = new Date().toISOString();
+        return true;
     }
 
     /**
@@ -446,110 +406,6 @@ class Page {
     }
 
     /**
-     * Reorder components
-     * @param {Array} componentIds - Array of component IDs in new order
-     * @returns {boolean} Success status
-     */
-    reorderComponents(componentIds) {
-        const reorderedComponents = [];
-        
-        componentIds.forEach((id, index) => {
-            const component = this.getComponentById(id);
-            if (!component) {
-                throw new Error(`Component with ID '${id}' not found`);
-            }
-            reorderedComponents.push({
-                ...component,
-                order: index + 1
-            });
-        });
-
-        // Add any remaining components that weren't in the reorder list
-        this.components.forEach(component => {
-            if (!componentIds.includes(component.id)) {
-                reorderedComponents.push({
-                    ...component,
-                    order: reorderedComponents.length + 1
-                });
-            }
-        });
-
-        this.components = reorderedComponents;
-        this.updatedAt = new Date();
-        return true;
-    }
-
-    /**
-     * Initialize page from template
-     * @param {Object} template - Template object with components
-     * @returns {boolean} Success status
-     */
-    initializeFromTemplate(template) {
-        if (!template || !template.components) {
-            throw new Error('Template must have components array');
-        }
-
-        this.templateId = template.id;
-        this.components = [];
-
-        // Convert template components to page components
-        template.components.forEach((templateComponent, index) => {
-            const pageComponent = {
-                id: `${templateComponent.type.toLowerCase()}-${Date.now()}-${index}`,
-                type: this.mapTemplateComponentType(templateComponent.type),
-                data: { ...templateComponent.defaultValues },
-                order: index + 1
-            };
-            this.addComponent(pageComponent);
-        });
-
-        this.updatedAt = new Date();
-        return true;
-    }
-
-    /**
-     * Map template component type to page component type
-     * @param {string} templateType - Template component type
-     * @returns {string} Page component type
-     */
-    mapTemplateComponentType(templateType) {
-        const typeMapping = {
-            'banner': 'BannerComponent',
-            'text': 'TextComponent',
-            'image': 'ImageComponent',
-            'button': 'ButtonComponent',
-            'container': 'ContainerComponent',
-            'card': 'CardComponent',
-            'accordion': 'AccordionComponent',
-            'linkgroup': 'LinkGroupComponent'
-        };
-
-        return typeMapping[templateType] || 'TextComponent';
-    }
-
-    /**
-     * Get component statistics
-     * @returns {Object} Component statistics
-     */
-    getComponentStats() {
-        const stats = {
-            totalComponents: this.components.length,
-            componentTypes: {},
-            orderedComponents: this.getOrderedComponents().map(c => ({
-                id: c.id,
-                type: c.type,
-                order: c.order
-            }))
-        };
-
-        this.components.forEach(component => {
-            stats.componentTypes[component.type] = (stats.componentTypes[component.type] || 0) + 1;
-        });
-
-        return stats;
-    }
-
-    /**
      * Convert to JSON object
      * @returns {Object} JSON representation
      */
@@ -573,25 +429,59 @@ class Page {
     }
 
     /**
-     * Validate UUID format
-     * @param {string} uuid - UUID string
-     * @returns {boolean} Valid UUID
-     */
-    isValidUUID(uuid) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(uuid);
-    }
-
-    /**
      * Create a new page from template
      * @param {Object} template - Template object
      * @returns {Page} New page instance
      */
     static createFromTemplate(template) {
-        const page = new Page();
-        page.initializeFromTemplate(template);
+        const page = new Page({
+            templateId: template.id
+        });
+
+        // Convert template components to page components
+        if (template.components && Array.isArray(template.components)) {
+            template.components.forEach((templateComponent, index) => {
+                if (templateComponent.type === 'text') {
+                    const textComponent = new TextComponent({
+                        content: templateComponent.defaultValues?.content || 'Click to edit text',
+                        order: index + 1
+                    });
+                    page.addComponent(textComponent.toJSON());
+                } else {
+                    // Handle other component types (basic structure for now)
+                    page.addComponent({
+                        id: `${templateComponent.type.toLowerCase()}-${Date.now()}-${index}`,
+                        type: this.mapTemplateComponentType(templateComponent.type),
+                        data: { ...templateComponent.defaultValues },
+                        order: index + 1
+                    });
+                }
+            });
+        }
+
         return page;
+    }
+
+    /**
+     * Map template component type to page component type
+     * @param {string} templateType - Template component type
+     * @returns {string} Page component type
+     */
+    static mapTemplateComponentType(templateType) {
+        const typeMapping = {
+            'banner': 'BannerComponent',
+            'text': 'TextComponent',
+            'image': 'ImageComponent',
+            'button': 'ButtonComponent',
+            'container': 'ContainerComponent',
+            'card': 'CardComponent',
+            'accordion': 'AccordionComponent',
+            'linkgroup': 'LinkGroupComponent'
+        };
+
+        return typeMapping[templateType] || 'TextComponent';
     }
 }
 
-module.exports = Page;
+// Export for use in other scripts
+window.Page = Page;
