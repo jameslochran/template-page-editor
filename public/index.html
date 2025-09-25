@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Page Editor</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="logo">
+                        <i class="fas fa-edit"></i>
+                        Template Page Editor
+                    </h1>
+                    <nav class="nav">
+                        <button class="nav-btn active" data-section="editor">
+                            <i class="fas fa-paint-brush"></i>
+                            Editor
+                        </button>
+                        <button class="nav-btn" data-section="templates">
+                            <i class="fas fa-folder"></i>
+                            Templates
+                        </button>
+                        <button class="nav-btn" data-section="settings">
+                            <i class="fas fa-cog"></i>
+                            Settings
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="container">
+                <!-- Editor Section -->
+                <section id="editor" class="section active">
+                    <div class="editor-container">
+                        <div class="toolbar">
+                            <div class="toolbar-group">
+                                <button class="toolbar-btn" data-tool="text">
+                                    <i class="fas fa-font"></i>
+                                    Text
+                                </button>
+                                <button class="toolbar-btn" data-tool="image">
+                                    <i class="fas fa-image"></i>
+                                    Image
+                                </button>
+                                <button class="toolbar-btn" data-tool="button">
+                                    <i class="fas fa-square"></i>
+                                    Button
+                                </button>
+                                <button class="toolbar-btn" data-tool="container">
+                                    <i class="fas fa-th"></i>
+                                    Container
+                                </button>
+                            </div>
+                            <div class="toolbar-group">
+                                <button class="toolbar-btn" data-action="preview">
+                                    <i class="fas fa-eye"></i>
+                                    Preview
+                                </button>
+                                <button class="toolbar-btn primary" data-action="save">
+                                    <i class="fas fa-save"></i>
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="canvas-container">
+                            <div class="canvas" id="canvas">
+                                <div class="canvas-placeholder">
+                                    <i class="fas fa-mouse-pointer"></i>
+                                    <p>Click on a tool to start building your page</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Templates Section -->
+                <section id="templates" class="section">
+                    <div class="templates-container">
+                        <div class="templates-header">
+                            <h2>My Templates</h2>
+                            <button class="btn btn-primary" id="create-template">
+                                <i class="fas fa-plus"></i>
+                                Create New Template
+                            </button>
+                        </div>
+                        <div class="templates-grid" id="templates-grid">
+                            <!-- Templates will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section id="settings" class="section">
+                    <div class="settings-container">
+                        <h2>Settings</h2>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <label for="theme">Theme</label>
+                                <select id="theme">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="auto">Auto</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="auto-save">Auto Save</label>
+                                <input type="checkbox" id="auto-save" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label for="grid-snap">Grid Snap</label>
+                                <input type="checkbox" id="grid-snap" checked>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
