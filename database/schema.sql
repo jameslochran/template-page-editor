@@ -181,6 +181,36 @@ CHECK (
     )
 );
 
+-- Validate AccordionComponent data structure
+ALTER TABLE Page 
+ADD CONSTRAINT check_accordion_component_structure 
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(components)
+        WHERE value->>'type' = 'AccordionComponent'
+        AND (
+            NOT (value->'data' ? 'items') OR
+            jsonb_typeof(value->'data'->'items') != 'array' OR
+            NOT (
+                SELECT bool_and(
+                    jsonb_typeof(item) = 'object' AND
+                    item ? 'id' AND
+                    item ? 'header' AND
+                    item ? 'content' AND
+                    item ? 'order' AND
+                    jsonb_typeof(item->'id') = 'string' AND
+                    jsonb_typeof(item->'header') = 'string' AND
+                    jsonb_typeof(item->'content') = 'object' AND
+                    jsonb_typeof(item->'order') = 'number' AND
+                    length(item->>'header') <= 255
+                )
+                FROM jsonb_array_elements(value->'data'->'items') AS item
+            )
+        )
+    )
+);
+
 -- =====================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
 -- =====================================================
@@ -387,6 +417,67 @@ INSERT INTO Page (template_id, components) VALUES
                     "caption": "Modern web development ecosystem"
                 },
                 "order": 4
+            }
+        ]'::jsonb
+    ),
+    (
+        (SELECT id FROM Template WHERE name = 'Hero Landing Page' LIMIT 1),
+        '[
+            {
+                "id": "accordion-001",
+                "type": "AccordionComponent",
+                "data": {
+                    "items": [
+                        {
+                            "id": "accordion-item-1",
+                            "header": "What is this template system?",
+                            "content": {
+                                "format": "html",
+                                "data": "<p>This is a powerful template system that allows you to create rich, interactive pages with components like text blocks, accordions, and more.</p>",
+                                "metadata": {
+                                    "version": "1.0",
+                                    "created": "2024-01-01T00:00:00Z",
+                                    "lastModified": "2024-01-01T00:00:00Z"
+                                }
+                            },
+                            "isOpen": true,
+                            "order": 1
+                        },
+                        {
+                            "id": "accordion-item-2",
+                            "header": "How do I add components?",
+                            "content": {
+                                "format": "html",
+                                "data": "<p>Simply click on a component type in the toolbar and then click on the canvas where you want to place it. You can then edit the content directly.</p>",
+                                "metadata": {
+                                    "version": "1.0",
+                                    "created": "2024-01-01T00:00:00Z",
+                                    "lastModified": "2024-01-01T00:00:00Z"
+                                }
+                            },
+                            "isOpen": false,
+                            "order": 2
+                        },
+                        {
+                            "id": "accordion-item-3",
+                            "header": "Can I customize accordion items?",
+                            "content": {
+                                "format": "html",
+                                "data": "<p>Yes! You can edit accordion headers by clicking on them, and edit content by clicking in the content area. Use the + and - buttons to add or remove items.</p>",
+                                "metadata": {
+                                    "version": "1.0",
+                                    "created": "2024-01-01T00:00:00Z",
+                                    "lastModified": "2024-01-01T00:00:00Z"
+                                }
+                            },
+                            "isOpen": false,
+                            "order": 3
+                        }
+                    ],
+                    "allowMultipleOpen": true,
+                    "style": "default"
+                },
+                "order": 1
             }
         ]'::jsonb
     );

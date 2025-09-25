@@ -1,5 +1,6 @@
 // Template Page Editor JavaScript Application
 // Work Order #8: TextComponent Data Model Structure Integration
+// Work Order #13: Accordion Component Data Model Structure Integration
 
 class TemplatePageEditor {
     constructor() {
@@ -176,6 +177,63 @@ class TemplatePageEditor {
                 
                 // Store component data
                 element.setAttribute('data-component', JSON.stringify(textData));
+                break;
+                
+            case 'accordion':
+                // Create AccordionComponent using structured data model
+                const accordionComponent = AccordionComponent.createDefault(2);
+                const accordionData = accordionComponent.toJSON();
+                
+                // Create accordion HTML structure
+                const accordionElement = document.createElement('div');
+                accordionElement.className = 'accordion-component';
+                accordionElement.setAttribute('data-accordion-data', JSON.stringify(accordionData));
+                accordionElement.style.width = '400px';
+                accordionElement.style.minHeight = '200px';
+                accordionElement.style.border = '1px solid #e2e8f0';
+                accordionElement.style.borderRadius = '8px';
+                accordionElement.style.backgroundColor = 'white';
+                accordionElement.style.padding = '10px';
+                
+                // Create accordion items
+                accordionData.data.items.forEach((item, index) => {
+                    const itemElement = this.createAccordionItemElement(item, index);
+                    accordionElement.appendChild(itemElement);
+                });
+                
+                // Add accordion controls
+                const controlsElement = document.createElement('div');
+                controlsElement.className = 'accordion-controls';
+                controlsElement.style.marginTop = '10px';
+                controlsElement.style.textAlign = 'center';
+                
+                const addButton = document.createElement('button');
+                addButton.textContent = '+ Add Item';
+                addButton.className = 'btn btn-sm';
+                addButton.style.marginRight = '5px';
+                addButton.addEventListener('click', () => {
+                    this.addAccordionItem(accordionData.id);
+                    this.refreshAccordionElement(accordionElement, accordionData.id);
+                });
+                
+                const removeButton = document.createElement('button');
+                removeButton.textContent = '- Remove Item';
+                removeButton.className = 'btn btn-sm';
+                removeButton.addEventListener('click', () => {
+                    this.removeLastAccordionItem(accordionData.id);
+                    this.refreshAccordionElement(accordionElement, accordionData.id);
+                });
+                
+                controlsElement.appendChild(addButton);
+                controlsElement.appendChild(removeButton);
+                accordionElement.appendChild(controlsElement);
+                
+                element.appendChild(accordionElement);
+                element.style.width = '400px';
+                element.style.minHeight = '200px';
+                
+                // Store component data
+                element.setAttribute('data-component', JSON.stringify(accordionData));
                 break;
                 
             case 'image':
@@ -536,6 +594,57 @@ class TemplatePageEditor {
                 element.style.backgroundColor = '#f8fafc';
                 break;
                 
+            case 'AccordionComponent':
+                const accordionComponent = new AccordionComponent(component);
+                const accordionData = accordionComponent.toJSON();
+                
+                // Create accordion HTML structure
+                const accordionElement = document.createElement('div');
+                accordionElement.className = 'accordion-component';
+                accordionElement.setAttribute('data-accordion-data', JSON.stringify(accordionData));
+                accordionElement.style.width = '400px';
+                accordionElement.style.minHeight = '200px';
+                accordionElement.style.border = '1px solid #e2e8f0';
+                accordionElement.style.borderRadius = '8px';
+                accordionElement.style.backgroundColor = 'white';
+                accordionElement.style.padding = '10px';
+                
+                // Create accordion items
+                accordionData.data.items.forEach((item, index) => {
+                    const itemElement = this.createAccordionItemElement(item, index);
+                    accordionElement.appendChild(itemElement);
+                });
+                
+                // Add accordion controls
+                const controlsElement = document.createElement('div');
+                controlsElement.className = 'accordion-controls';
+                controlsElement.style.marginTop = '10px';
+                controlsElement.style.textAlign = 'center';
+                
+                const addButton = document.createElement('button');
+                addButton.textContent = '+ Add Item';
+                addButton.className = 'btn btn-sm';
+                addButton.style.marginRight = '5px';
+                addButton.addEventListener('click', () => {
+                    this.addAccordionItem(accordionData.id);
+                    this.refreshAccordionElement(accordionElement, accordionData.id);
+                });
+                
+                const removeButton = document.createElement('button');
+                removeButton.textContent = '- Remove Item';
+                removeButton.className = 'btn btn-sm';
+                removeButton.addEventListener('click', () => {
+                    this.removeLastAccordionItem(accordionData.id);
+                    this.refreshAccordionElement(accordionElement, accordionData.id);
+                });
+                
+                controlsElement.appendChild(addButton);
+                controlsElement.appendChild(removeButton);
+                accordionElement.appendChild(controlsElement);
+                
+                element.appendChild(accordionElement);
+                break;
+                
             default:
                 element.innerHTML = `<div class="unknown-component">Unknown Component: ${component.type}</div>`;
                 element.style.width = '200px';
@@ -580,6 +689,280 @@ class TemplatePageEditor {
                 this.currentPage.updateTextComponentContent(componentId, content);
             } catch (error) {
                 console.warn('Failed to update text component:', error);
+            }
+        }
+    }
+
+    /**
+     * Create accordion item element
+     * @param {Object} item - Accordion item data
+     * @param {number} index - Item index
+     * @returns {Element} Accordion item DOM element
+     */
+    createAccordionItemElement(item, index) {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'accordion-item';
+        itemElement.style.border = '1px solid #e2e8f0';
+        itemElement.style.borderRadius = '4px';
+        itemElement.style.marginBottom = '8px';
+        itemElement.style.overflow = 'hidden';
+
+        // Create header
+        const headerElement = document.createElement('div');
+        headerElement.className = 'accordion-header';
+        headerElement.style.padding = '12px';
+        headerElement.style.backgroundColor = '#f8fafc';
+        headerElement.style.cursor = 'pointer';
+        headerElement.style.display = 'flex';
+        headerElement.style.justifyContent = 'space-between';
+        headerElement.style.alignItems = 'center';
+        headerElement.setAttribute('data-item-id', item.id);
+
+        const headerText = document.createElement('input');
+        headerText.type = 'text';
+        headerText.value = item.header;
+        headerText.style.border = 'none';
+        headerText.style.background = 'transparent';
+        headerText.style.fontWeight = '600';
+        headerText.style.width = '100%';
+        headerText.style.outline = 'none';
+        headerText.addEventListener('blur', () => {
+            this.updateAccordionItemHeader(item.id, headerText.value);
+        });
+
+        const toggleIcon = document.createElement('span');
+        toggleIcon.textContent = item.isOpen ? '▼' : '▶';
+        toggleIcon.style.fontSize = '12px';
+        toggleIcon.style.color = '#64748b';
+
+        headerElement.appendChild(headerText);
+        headerElement.appendChild(toggleIcon);
+
+        // Create content
+        const contentElement = document.createElement('div');
+        contentElement.className = 'accordion-content';
+        contentElement.style.padding = '12px';
+        contentElement.style.backgroundColor = 'white';
+        contentElement.style.display = item.isOpen ? 'block' : 'none';
+
+        const contentEditor = document.createElement('div');
+        contentEditor.className = 'accordion-content-editor';
+        contentEditor.contentEditable = true;
+        contentEditor.innerHTML = item.content.data;
+        contentEditor.style.minHeight = '50px';
+        contentEditor.style.border = '1px solid transparent';
+        contentEditor.style.borderRadius = '4px';
+        contentEditor.style.padding = '8px';
+        contentEditor.style.outline = 'none';
+        contentEditor.setAttribute('data-item-id', item.id);
+
+        contentEditor.addEventListener('focus', () => {
+            contentEditor.style.border = '1px solid #2563eb';
+            contentEditor.style.backgroundColor = '#f8fafc';
+        });
+
+        contentEditor.addEventListener('blur', () => {
+            contentEditor.style.border = '1px solid transparent';
+            contentEditor.style.backgroundColor = 'transparent';
+            this.updateAccordionItemContent(item.id, contentEditor.innerHTML);
+        });
+
+        contentEditor.addEventListener('input', () => {
+            this.updateAccordionItemContent(item.id, contentEditor.innerHTML);
+        });
+
+        contentElement.appendChild(contentEditor);
+
+        // Add click handler for toggle
+        headerElement.addEventListener('click', () => {
+            this.toggleAccordionItem(item.id);
+            this.refreshAccordionItemElement(itemElement, item.id);
+        });
+
+        itemElement.appendChild(headerElement);
+        itemElement.appendChild(contentElement);
+
+        return itemElement;
+    }
+
+    /**
+     * Refresh accordion element after data changes
+     * @param {Element} accordionElement - Accordion DOM element
+     * @param {string} componentId - Component ID
+     */
+    refreshAccordionElement(accordionElement, componentId) {
+        if (this.currentPage) {
+            const accordionComponent = this.currentPage.getAccordionComponentById(componentId);
+            if (accordionComponent) {
+                // Update data attribute
+                accordionElement.setAttribute('data-accordion-data', JSON.stringify(accordionComponent.toJSON()));
+                
+                // Remove existing items (except controls)
+                const existingItems = accordionElement.querySelectorAll('.accordion-item');
+                existingItems.forEach(item => item.remove());
+                
+                // Add updated items
+                const controlsElement = accordionElement.querySelector('.accordion-controls');
+                accordionComponent.getOrderedItems().forEach((item, index) => {
+                    const itemElement = this.createAccordionItemElement(item, index);
+                    accordionElement.insertBefore(itemElement, controlsElement);
+                });
+            }
+        }
+    }
+
+    /**
+     * Refresh accordion item element
+     * @param {Element} itemElement - Item DOM element
+     * @param {string} itemId - Item ID
+     */
+    refreshAccordionItemElement(itemElement, itemId) {
+        if (this.currentPage) {
+            // Find the component ID from the accordion element
+            const accordionElement = itemElement.closest('.accordion-component');
+            if (accordionElement) {
+                const componentData = JSON.parse(accordionElement.getAttribute('data-accordion-data'));
+                const accordionComponent = this.currentPage.getAccordionComponentById(componentData.id);
+                
+                if (accordionComponent) {
+                    const item = accordionComponent.getItemById(itemId);
+                    if (item) {
+                        const contentElement = itemElement.querySelector('.accordion-content');
+                        const toggleIcon = itemElement.querySelector('.accordion-header span');
+                        
+                        contentElement.style.display = item.isOpen ? 'block' : 'none';
+                        toggleIcon.textContent = item.isOpen ? '▼' : '▶';
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Add accordion item
+     * @param {string} componentId - Component ID
+     */
+    addAccordionItem(componentId) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.addAccordionItem(componentId, {
+                    header: 'New Accordion Item',
+                    content: {
+                        format: 'html',
+                        data: '<p>Click to edit content</p>'
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to add accordion item:', error);
+                this.showNotification('Failed to add accordion item: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Remove last accordion item
+     * @param {string} componentId - Component ID
+     */
+    removeLastAccordionItem(componentId) {
+        if (this.currentPage) {
+            try {
+                const accordionComponent = this.currentPage.getAccordionComponentById(componentId);
+                if (accordionComponent && accordionComponent.getItemCount() > 1) {
+                    const lastItem = accordionComponent.getOrderedItems().pop();
+                    this.currentPage.removeAccordionItem(componentId, lastItem.id);
+                } else {
+                    this.showNotification('Cannot remove the last accordion item', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to remove accordion item:', error);
+                this.showNotification('Failed to remove accordion item: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Toggle accordion item
+     * @param {string} itemId - Item ID
+     */
+    toggleAccordionItem(itemId) {
+        if (this.currentPage) {
+            try {
+                // Find the component ID from the accordion element
+                const accordionElements = document.querySelectorAll('.accordion-component');
+                for (const accordionElement of accordionElements) {
+                    const componentData = JSON.parse(accordionElement.getAttribute('data-accordion-data'));
+                    const accordionComponent = this.currentPage.getAccordionComponentById(componentData.id);
+                    
+                    if (accordionComponent && accordionComponent.getItemById(itemId)) {
+                        this.currentPage.toggleAccordionItem(componentData.id, itemId);
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to toggle accordion item:', error);
+                this.showNotification('Failed to toggle accordion item: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update accordion item header
+     * @param {string} itemId - Item ID
+     * @param {string} header - New header text
+     */
+    updateAccordionItemHeader(itemId, header) {
+        if (this.currentPage) {
+            try {
+                // Find the component ID from the accordion element
+                const accordionElements = document.querySelectorAll('.accordion-component');
+                for (const accordionElement of accordionElements) {
+                    const componentData = JSON.parse(accordionElement.getAttribute('data-accordion-data'));
+                    const accordionComponent = this.currentPage.getAccordionComponentById(componentData.id);
+                    
+                    if (accordionComponent && accordionComponent.getItemById(itemId)) {
+                        this.currentPage.updateAccordionItem(componentData.id, itemId, { header });
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to update accordion item header:', error);
+                this.showNotification('Failed to update header: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update accordion item content
+     * @param {string} itemId - Item ID
+     * @param {string} content - New content
+     */
+    updateAccordionItemContent(itemId, content) {
+        if (this.currentPage) {
+            try {
+                // Find the component ID from the accordion element
+                const accordionElements = document.querySelectorAll('.accordion-component');
+                for (const accordionElement of accordionElements) {
+                    const componentData = JSON.parse(accordionElement.getAttribute('data-accordion-data'));
+                    const accordionComponent = this.currentPage.getAccordionComponentById(componentData.id);
+                    
+                    if (accordionComponent && accordionComponent.getItemById(itemId)) {
+                        this.currentPage.updateAccordionItem(componentData.id, itemId, {
+                            content: {
+                                format: 'html',
+                                data: content,
+                                metadata: {
+                                    version: '1.0',
+                                    created: new Date().toISOString(),
+                                    lastModified: new Date().toISOString()
+                                }
+                            }
+                        });
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to update accordion item content:', error);
+                this.showNotification('Failed to update content: ' + error.message, 'error');
             }
         }
     }

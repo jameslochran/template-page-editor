@@ -406,6 +406,165 @@ class Page {
     }
 
     /**
+     * Get all AccordionComponents on the page
+     * @returns {Array} Array of AccordionComponent instances
+     */
+    getAccordionComponents() {
+        return this.components
+            .filter(c => c.type === 'AccordionComponent')
+            .map(c => new AccordionComponent(c));
+    }
+
+    /**
+     * Get AccordionComponent by ID
+     * @param {string} componentId - Component ID
+     * @returns {AccordionComponent|null} AccordionComponent instance or null
+     */
+    getAccordionComponentById(componentId) {
+        const component = this.getComponentById(componentId);
+        if (component && component.type === 'AccordionComponent') {
+            return new AccordionComponent(component);
+        }
+        return null;
+    }
+
+    /**
+     * Create a new AccordionComponent and add it to the page
+     * @param {Object} options - AccordionComponent options
+     * @param {Array} options.items - Initial items (optional)
+     * @param {boolean} options.allowMultipleOpen - Allow multiple open items (optional)
+     * @param {string} options.style - Component style (optional)
+     * @param {number} options.order - Component order (optional)
+     * @returns {AccordionComponent} Created AccordionComponent instance
+     */
+    createAccordionComponent(options = {}) {
+        const accordionComponent = new AccordionComponent({
+            data: {
+                items: options.items || AccordionComponent.createDefault(2).data.items,
+                allowMultipleOpen: options.allowMultipleOpen !== undefined ? options.allowMultipleOpen : true,
+                style: options.style || 'default'
+            },
+            order: options.order || this.getNextOrder()
+        });
+
+        this.addComponent(accordionComponent.toJSON());
+        return accordionComponent;
+    }
+
+    /**
+     * Update AccordionComponent data
+     * @param {string} componentId - Component ID
+     * @param {Object} data - New data
+     * @returns {boolean} Success status
+     */
+    updateAccordionComponentData(componentId, data) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.data = accordionComponent.initializeData(data);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Add item to AccordionComponent
+     * @param {string} componentId - Component ID
+     * @param {Object} itemData - Item data (optional)
+     * @returns {string} New item ID
+     */
+    addAccordionItem(componentId, itemData = {}) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        const itemId = accordionComponent.addItem(itemData);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return itemId;
+    }
+
+    /**
+     * Remove item from AccordionComponent
+     * @param {string} componentId - Component ID
+     * @param {string} itemId - Item ID to remove
+     * @returns {boolean} Success status
+     */
+    removeAccordionItem(componentId, itemId) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.removeItem(itemId);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update AccordionComponent item
+     * @param {string} componentId - Component ID
+     * @param {string} itemId - Item ID
+     * @param {Object} updates - Fields to update
+     * @returns {boolean} Success status
+     */
+    updateAccordionItem(componentId, itemId, updates) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.updateItem(itemId, updates);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Toggle AccordionComponent item state
+     * @param {string} componentId - Component ID
+     * @param {string} itemId - Item ID
+     * @returns {boolean} New open state
+     */
+    toggleAccordionItem(componentId, itemId) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        const newState = accordionComponent.toggleItem(itemId);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return newState;
+    }
+
+    /**
+     * Get accordion content statistics
+     * @returns {Object} Accordion content statistics
+     */
+    getAccordionContentStats() {
+        const accordionComponents = this.getAccordionComponents();
+        const stats = {
+            totalAccordionComponents: accordionComponents.length,
+            totalItems: 0,
+            openItems: 0,
+            closedItems: 0,
+            totalCharacters: 0,
+            totalWords: 0
+        };
+
+        accordionComponents.forEach(ac => {
+            const componentStats = ac.getContentStats();
+            stats.totalItems += componentStats.totalItems;
+            stats.openItems += componentStats.openItems;
+            stats.closedItems += componentStats.closedItems;
+            stats.totalCharacters += componentStats.totalCharacters;
+            stats.totalWords += componentStats.totalWords;
+        });
+
+        return stats;
+    }
+
+    /**
      * Convert to JSON object
      * @returns {Object} JSON representation
      */
