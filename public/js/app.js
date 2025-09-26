@@ -815,7 +815,10 @@ class TemplatePageEditor {
                 name: `Template ${this.templates.length + 1}`,
                 page: page.toJSON(),
                 html: document.getElementById('canvas').innerHTML, // Keep for backward compatibility
-                createdAt: new Date().toISOString()
+                sourceFigmaFileUrl: null, // S3 URL for Figma export file
+                sourcePngFileUrl: null,   // S3 URL for PNG image file
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
             this.templates.push(templateData);
@@ -918,10 +921,106 @@ class TemplatePageEditor {
         canvas.innerHTML = '<div class="canvas-placeholder"><i class="fas fa-mouse-pointer"></i><p>Click on a tool to start building your page</p></div>';
     }
 
+    /**
+     * Validate S3 URL format and length
+     * @param {string} url - URL to validate
+     * @returns {Object} Validation result with isValid boolean and error message
+     */
+    validateSourceFileUrl(url) {
+        // Allow null/undefined values (optional fields)
+        if (!url || url.trim() === '') {
+            return { isValid: true, error: null };
+        }
+
+        const trimmedUrl = url.trim();
+
+        // Check maximum length (2048 characters)
+        if (trimmedUrl.length > 2048) {
+            return { 
+                isValid: false, 
+                error: 'URL must not exceed 2048 characters' 
+            };
+        }
+
+        // Basic URL format validation
+        try {
+            const urlObj = new URL(trimmedUrl);
+            
+            // Additional S3-specific validation (optional)
+            if (trimmedUrl.includes('s3.amazonaws.com') || trimmedUrl.includes('amazonaws.com/s3')) {
+                // S3 URL format is valid
+                return { isValid: true, error: null };
+            } else {
+                // Accept any valid URL format, not just S3
+                return { isValid: true, error: null };
+            }
+        } catch (error) {
+            return { 
+                isValid: false, 
+                error: 'Invalid URL format' 
+            };
+        }
+    }
+
+    /**
+     * Update template source file URLs with validation
+     * @param {number} templateId - Template ID
+     * @param {string} sourceFigmaFileUrl - Figma source file URL (optional)
+     * @param {string} sourcePngFileUrl - PNG source file URL (optional)
+     * @returns {boolean} Success status
+     */
+    updateTemplateSourceFiles(templateId, sourceFigmaFileUrl = null, sourcePngFileUrl = null) {
+        try {
+            // Validate URLs if provided
+            if (sourceFigmaFileUrl !== null) {
+                const figmaValidation = this.validateSourceFileUrl(sourceFigmaFileUrl);
+                if (!figmaValidation.isValid) {
+                    throw new Error(`Figma file URL: ${figmaValidation.error}`);
+                }
+            }
+
+            if (sourcePngFileUrl !== null) {
+                const pngValidation = this.validateSourceFileUrl(sourcePngFileUrl);
+                if (!pngValidation.isValid) {
+                    throw new Error(`PNG file URL: ${pngValidation.error}`);
+                }
+            }
+
+            // Find and update template
+            const template = this.templates.find(t => t.id === templateId);
+            if (!template) {
+                throw new Error('Template not found');
+            }
+
+            // Update template with new source file URLs
+            template.sourceFigmaFileUrl = sourceFigmaFileUrl;
+            template.sourcePngFileUrl = sourcePngFileUrl;
+            template.updatedAt = new Date().toISOString();
+
+            // Save to localStorage
+            this.saveTemplatesToStorage();
+            
+            this.showNotification('Template source files updated successfully!');
+            return true;
+        } catch (error) {
+            console.error('Error updating template source files:', error);
+            this.showNotification('Error updating source files: ' + error.message, 'error');
+            return false;
+        }
+    }
+
     loadTemplates() {
         const saved = localStorage.getItem('templatePageEditor_templates');
         if (saved) {
             this.templates = JSON.parse(saved);
+            
+            // Ensure backward compatibility: initialize new fields for existing templates
+            this.templates = this.templates.map(template => ({
+                ...template,
+                sourceFigmaFileUrl: template.sourceFigmaFileUrl || null,
+                sourcePngFileUrl: template.sourcePngFileUrl || null,
+                updatedAt: template.updatedAt || template.createdAt || new Date().toISOString()
+            }));
         }
     }
 
@@ -941,9 +1040,24 @@ class TemplatePageEditor {
         this.templates.forEach(template => {
             const card = document.createElement('div');
             card.className = 'template-card';
+            
+            // Build source files info
+            let sourceFilesInfo = '';
+            if (template.sourceFigmaFileUrl || template.sourcePngFileUrl) {
+                sourceFilesInfo = '<div class="source-files-info" style="margin: 8px 0; font-size: 12px; color: #64748b;">';
+                if (template.sourceFigmaFileUrl) {
+                    sourceFilesInfo += '<div><i class="fas fa-file-image"></i> Figma</div>';
+                }
+                if (template.sourcePngFileUrl) {
+                    sourceFilesInfo += '<div><i class="fas fa-image"></i> PNG</div>';
+                }
+                sourceFilesInfo += '</div>';
+            }
+            
             card.innerHTML = `
                 <h3>${template.name}</h3>
                 <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
+                ${sourceFilesInfo}
                 <div class="template-actions">
                     <button class="btn btn-primary" onclick="app.loadTemplate(${template.id})">Load</button>
                     <button class="btn" onclick="app.deleteTemplate(${template.id})">Delete</button>
