@@ -3,6 +3,7 @@
 // Work Order #13: Accordion Component Data Model Structure Integration
 // Work Order #18: CardComponent Data Model Structure and Validation
 // Work Order #23: Banner Component Data Model Structure
+// Work Order #24: LinkGroupComponent Data Model Structure
 
 class TemplatePageEditor {
     constructor() {
@@ -616,6 +617,89 @@ class TemplatePageEditor {
                 
                 // Store component data
                 element.setAttribute('data-component', JSON.stringify(bannerData));
+                break;
+                
+            case 'linkgroup':
+                // Create LinkGroupComponent using structured data model
+                const linkGroupComponent = LinkGroupComponent.createDefault();
+                const linkGroupData = linkGroupComponent.toJSON();
+                
+                // Create link group HTML structure
+                const linkGroupElement = document.createElement('div');
+                linkGroupElement.className = 'linkgroup-component';
+                linkGroupElement.setAttribute('data-linkgroup-data', JSON.stringify(linkGroupData));
+                linkGroupElement.style.width = '100%';
+                linkGroupElement.style.minHeight = '200px';
+                linkGroupElement.style.border = '1px solid #e2e8f0';
+                linkGroupElement.style.borderRadius = '8px';
+                linkGroupElement.style.backgroundColor = 'white';
+                linkGroupElement.style.padding = '20px';
+                
+                // Title input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.value = linkGroupData.data.title;
+                titleInput.style.width = '100%';
+                titleInput.style.border = 'none';
+                titleInput.style.outline = 'none';
+                titleInput.style.fontSize = '20px';
+                titleInput.style.fontWeight = '600';
+                titleInput.style.marginBottom = '15px';
+                titleInput.style.backgroundColor = 'transparent';
+                titleInput.style.borderBottom = '2px solid #e2e8f0';
+                titleInput.style.paddingBottom = '5px';
+                titleInput.addEventListener('blur', () => {
+                    this.updateLinkGroupTitle(linkGroupData.id, titleInput.value);
+                });
+                
+                // Links container
+                const linksContainer = document.createElement('div');
+                linksContainer.className = 'links-container';
+                linksContainer.style.display = 'flex';
+                linksContainer.style.flexDirection = 'column';
+                linksContainer.style.gap = '10px';
+                
+                // Create initial links
+                linkGroupData.data.links.forEach((linkData, index) => {
+                    const linkElement = this.createLinkElement(linkData, linkGroupData.id);
+                    linksContainer.appendChild(linkElement);
+                });
+                
+                // Controls container
+                const controlsContainer = document.createElement('div');
+                controlsContainer.className = 'linkgroup-controls';
+                controlsContainer.style.marginTop = '15px';
+                controlsContainer.style.display = 'flex';
+                controlsContainer.style.gap = '10px';
+                controlsContainer.style.justifyContent = 'center';
+                
+                // Add link button
+                const addLinkButton = document.createElement('button');
+                addLinkButton.textContent = '+ Add Link';
+                addLinkButton.className = 'btn btn-sm';
+                addLinkButton.style.backgroundColor = '#10b981';
+                addLinkButton.style.color = 'white';
+                addLinkButton.style.border = 'none';
+                addLinkButton.style.padding = '8px 16px';
+                addLinkButton.style.borderRadius = '4px';
+                addLinkButton.style.cursor = 'pointer';
+                addLinkButton.addEventListener('click', () => {
+                    this.addLinkToGroup(linkGroupData.id);
+                    this.refreshLinkGroupElement(linkGroupElement, linkGroupData.id);
+                });
+                
+                controlsContainer.appendChild(addLinkButton);
+                
+                linkGroupElement.appendChild(titleInput);
+                linkGroupElement.appendChild(linksContainer);
+                linkGroupElement.appendChild(controlsContainer);
+                
+                element.appendChild(linkGroupElement);
+                element.style.width = '100%';
+                element.style.minHeight = '200px';
+                
+                // Store component data
+                element.setAttribute('data-component', JSON.stringify(linkGroupData));
                 break;
                 
             case 'image':
@@ -1396,6 +1480,84 @@ class TemplatePageEditor {
                 element.appendChild(bannerElement);
                 break;
                 
+            case 'LinkGroupComponent':
+                // Create LinkGroupComponent from structured data
+                const linkGroupComponent = new LinkGroupComponent(component);
+                const linkGroupData = linkGroupComponent.toJSON();
+                
+                // Create link group HTML structure
+                const linkGroupElement = document.createElement('div');
+                linkGroupElement.className = 'linkgroup-component';
+                linkGroupElement.setAttribute('data-linkgroup-data', JSON.stringify(linkGroupData));
+                linkGroupElement.style.width = '100%';
+                linkGroupElement.style.minHeight = '200px';
+                linkGroupElement.style.border = '1px solid #e2e8f0';
+                linkGroupElement.style.borderRadius = '8px';
+                linkGroupElement.style.backgroundColor = 'white';
+                linkGroupElement.style.padding = '20px';
+                
+                // Title input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.value = linkGroupData.data.title;
+                titleInput.style.width = '100%';
+                titleInput.style.border = 'none';
+                titleInput.style.outline = 'none';
+                titleInput.style.fontSize = '20px';
+                titleInput.style.fontWeight = '600';
+                titleInput.style.marginBottom = '15px';
+                titleInput.style.backgroundColor = 'transparent';
+                titleInput.style.borderBottom = '2px solid #e2e8f0';
+                titleInput.style.paddingBottom = '5px';
+                titleInput.addEventListener('blur', () => {
+                    this.updateLinkGroupTitle(linkGroupData.id, titleInput.value);
+                });
+                
+                // Links container
+                const linksContainer = document.createElement('div');
+                linksContainer.className = 'links-container';
+                linksContainer.style.display = 'flex';
+                linksContainer.style.flexDirection = 'column';
+                linksContainer.style.gap = '10px';
+                
+                // Create links from data
+                linkGroupData.data.links.forEach((linkData, index) => {
+                    const linkElement = this.createLinkElement(linkData, linkGroupData.id);
+                    linksContainer.appendChild(linkElement);
+                });
+                
+                // Controls container
+                const controlsContainer = document.createElement('div');
+                controlsContainer.className = 'linkgroup-controls';
+                controlsContainer.style.marginTop = '15px';
+                controlsContainer.style.display = 'flex';
+                controlsContainer.style.gap = '10px';
+                controlsContainer.style.justifyContent = 'center';
+                
+                // Add link button
+                const addLinkButton = document.createElement('button');
+                addLinkButton.textContent = '+ Add Link';
+                addLinkButton.className = 'btn btn-sm';
+                addLinkButton.style.backgroundColor = '#10b981';
+                addLinkButton.style.color = 'white';
+                addLinkButton.style.border = 'none';
+                addLinkButton.style.padding = '8px 16px';
+                addLinkButton.style.borderRadius = '4px';
+                addLinkButton.style.cursor = 'pointer';
+                addLinkButton.addEventListener('click', () => {
+                    this.addLinkToGroup(linkGroupData.id);
+                    this.refreshLinkGroupElement(linkGroupElement, linkGroupData.id);
+                });
+                
+                controlsContainer.appendChild(addLinkButton);
+                
+                linkGroupElement.appendChild(titleInput);
+                linkGroupElement.appendChild(linksContainer);
+                linkGroupElement.appendChild(controlsContainer);
+                
+                element.appendChild(linkGroupElement);
+                break;
+                
             default:
                 element.innerHTML = `<div class="unknown-component">Unknown Component: ${component.type}</div>`;
                 element.style.width = '200px';
@@ -1823,6 +1985,171 @@ class TemplatePageEditor {
             } catch (error) {
                 console.error('Failed to update banner call-to-action:', error);
                 this.showNotification('Failed to update call-to-action: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Link Group Component Helper Functions
+    createLinkElement(linkData, linkGroupId) {
+        const linkElement = document.createElement('div');
+        linkElement.className = 'link-item';
+        linkElement.style.display = 'flex';
+        linkElement.style.alignItems = 'center';
+        linkElement.style.gap = '10px';
+        linkElement.style.padding = '8px';
+        linkElement.style.border = '1px solid #e2e8f0';
+        linkElement.style.borderRadius = '4px';
+        linkElement.style.backgroundColor = '#f8fafc';
+        
+        // Link text input
+        const linkTextInput = document.createElement('input');
+        linkTextInput.type = 'text';
+        linkTextInput.value = linkData.linkText;
+        linkTextInput.style.flex = '1';
+        linkTextInput.style.border = 'none';
+        linkTextInput.style.outline = 'none';
+        linkTextInput.style.backgroundColor = 'transparent';
+        linkTextInput.style.padding = '4px';
+        linkTextInput.style.maxLength = '255';
+        linkTextInput.addEventListener('blur', () => {
+            this.updateLinkInGroup(linkGroupId, linkData.id, {
+                linkText: linkTextInput.value,
+                linkUrl: linkUrlInput.value,
+                linkTarget: linkTargetSelect.value
+            });
+        });
+        
+        // Link URL input
+        const linkUrlInput = document.createElement('input');
+        linkUrlInput.type = 'url';
+        linkUrlInput.value = linkData.linkUrl;
+        linkUrlInput.style.flex = '2';
+        linkUrlInput.style.border = 'none';
+        linkUrlInput.style.outline = 'none';
+        linkUrlInput.style.backgroundColor = 'transparent';
+        linkUrlInput.style.padding = '4px';
+        linkUrlInput.addEventListener('blur', () => {
+            this.updateLinkInGroup(linkGroupId, linkData.id, {
+                linkText: linkTextInput.value,
+                linkUrl: linkUrlInput.value,
+                linkTarget: linkTargetSelect.value
+            });
+        });
+        
+        // Link target select
+        const linkTargetSelect = document.createElement('select');
+        linkTargetSelect.value = linkData.linkTarget;
+        linkTargetSelect.style.border = 'none';
+        linkTargetSelect.style.outline = 'none';
+        linkTargetSelect.style.backgroundColor = 'transparent';
+        linkTargetSelect.style.padding = '4px';
+        linkTargetSelect.addEventListener('change', () => {
+            this.updateLinkInGroup(linkGroupId, linkData.id, {
+                linkText: linkTextInput.value,
+                linkUrl: linkUrlInput.value,
+                linkTarget: linkTargetSelect.value
+            });
+        });
+        
+        const selfOption = document.createElement('option');
+        selfOption.value = '_self';
+        selfOption.textContent = 'Same';
+        const blankOption = document.createElement('option');
+        blankOption.value = '_blank';
+        blankOption.textContent = 'New';
+        
+        linkTargetSelect.appendChild(selfOption);
+        linkTargetSelect.appendChild(blankOption);
+        
+        // Remove button
+        const removeButton = document.createElement('button');
+        removeButton.textContent = '×';
+        removeButton.style.width = '24px';
+        removeButton.style.height = '24px';
+        removeButton.style.border = 'none';
+        removeButton.style.borderRadius = '50%';
+        removeButton.style.backgroundColor = '#ef4444';
+        removeButton.style.color = 'white';
+        removeButton.style.cursor = 'pointer';
+        removeButton.style.fontSize = '16px';
+        removeButton.style.display = 'flex';
+        removeButton.style.alignItems = 'center';
+        removeButton.style.justifyContent = 'center';
+        removeButton.addEventListener('click', () => {
+            this.removeLinkFromGroup(linkGroupId, linkData.id);
+            this.refreshLinkGroupElement(linkElement.closest('.linkgroup-component'), linkGroupId);
+        });
+        
+        linkElement.appendChild(linkTextInput);
+        linkElement.appendChild(linkUrlInput);
+        linkElement.appendChild(linkTargetSelect);
+        linkElement.appendChild(removeButton);
+        
+        return linkElement;
+    }
+
+    refreshLinkGroupElement(linkGroupElement, linkGroupId) {
+        if (!this.currentPage) return;
+        
+        const linkGroupComponent = this.currentPage.getLinkGroupComponentById(linkGroupId);
+        if (!linkGroupComponent) return;
+        
+        const linksContainer = linkGroupElement.querySelector('.links-container');
+        if (linksContainer) {
+            linksContainer.innerHTML = '';
+            linkGroupComponent.data.links.forEach(linkData => {
+                const linkElement = this.createLinkElement(linkData, linkGroupId);
+                linksContainer.appendChild(linkElement);
+            });
+        }
+    }
+
+    // Link Group Component Update Functions
+    updateLinkGroupTitle(componentId, title) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateLinkGroupComponentData(componentId, { title });
+            } catch (error) {
+                console.error('Failed to update link group title:', error);
+                this.showNotification('Failed to update title: ' + error.message, 'error');
+            }
+        }
+    }
+
+    addLinkToGroup(componentId) {
+        if (this.currentPage) {
+            try {
+                const newLink = {
+                    linkText: 'New Link',
+                    linkUrl: 'https://example.com',
+                    linkTarget: '_self'
+                };
+                this.currentPage.addLinkToGroup(componentId, newLink);
+            } catch (error) {
+                console.error('Failed to add link to group:', error);
+                this.showNotification('Failed to add link: ' + error.message, 'error');
+            }
+        }
+    }
+
+    removeLinkFromGroup(componentId, linkId) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.removeLinkFromGroup(componentId, linkId);
+            } catch (error) {
+                console.error('Failed to remove link from group:', error);
+                this.showNotification('Failed to remove link: ' + error.message, 'error');
+            }
+        }
+    }
+
+    updateLinkInGroup(componentId, linkId, updates) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateLinkInGroup(componentId, linkId, updates);
+            } catch (error) {
+                console.error('Failed to update link in group:', error);
+                this.showNotification('Failed to update link: ' + error.message, 'error');
             }
         }
     }

@@ -277,6 +277,41 @@ CHECK (
     )
 );
 
+-- Validate LinkGroupComponent data structure
+ALTER TABLE Page 
+ADD CONSTRAINT check_linkgroup_component_structure 
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(components)
+        WHERE value->>'type' = 'LinkGroupComponent'
+        AND (
+            NOT (value->'data' ? 'links') OR
+            jsonb_typeof(value->'data'->'links') != 'array' OR
+            jsonb_array_length(value->'data'->'links') = 0 OR
+            NOT (
+                SELECT bool_and(
+                    jsonb_typeof(link) = 'object' AND
+                    link ? 'id' AND
+                    link ? 'linkText' AND
+                    link ? 'linkUrl' AND
+                    link ? 'linkTarget' AND
+                    jsonb_typeof(link->'id') = 'string' AND
+                    jsonb_typeof(link->'linkText') = 'string' AND
+                    jsonb_typeof(link->'linkUrl') = 'string' AND
+                    jsonb_typeof(link->'linkTarget') = 'string' AND
+                    length(link->>'linkText') > 0 AND
+                    length(link->>'linkText') <= 255 AND
+                    length(link->>'linkUrl') > 0 AND
+                    length(link->>'linkUrl') <= 2048 AND
+                    link->>'linkTarget' IN ('_self', '_blank')
+                )
+                FROM jsonb_array_elements(value->'data'->'links') AS link
+            )
+        )
+    )
+);
+
 -- =====================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
 -- =====================================================
@@ -429,6 +464,45 @@ INSERT INTO Page (template_id, components) VALUES
                     "alignment": "center"
                 },
                 "order": 3
+            },
+            {
+                "id": "linkgroup-001",
+                "type": "LinkGroupComponent",
+                "data": {
+                    "title": "Navigation Links",
+                    "links": [
+                        {
+                            "id": "link-001",
+                            "linkText": "Home",
+                            "linkUrl": "https://example.com/home",
+                            "linkTarget": "_self",
+                            "order": 0
+                        },
+                        {
+                            "id": "link-002",
+                            "linkText": "About",
+                            "linkUrl": "https://example.com/about",
+                            "linkTarget": "_self",
+                            "order": 1
+                        },
+                        {
+                            "id": "link-003",
+                            "linkText": "Contact",
+                            "linkUrl": "https://example.com/contact",
+                            "linkTarget": "_self",
+                            "order": 2
+                        },
+                        {
+                            "id": "link-004",
+                            "linkText": "Documentation",
+                            "linkUrl": "https://docs.example.com",
+                            "linkTarget": "_blank",
+                            "order": 3
+                        }
+                    ],
+                    "style": "default"
+                },
+                "order": 4
             }
         ]'::jsonb
     ),

@@ -940,6 +940,222 @@ class Page {
     }
 
     /**
+     * Get all LinkGroupComponents on the page
+     * @returns {Array} Array of LinkGroupComponent instances
+     */
+    getLinkGroupComponents() {
+        return this.components
+            .filter(c => c.type === 'LinkGroupComponent')
+            .map(c => new LinkGroupComponent(c));
+    }
+
+    /**
+     * Get LinkGroupComponent by ID
+     * @param {string} componentId - Component ID
+     * @returns {LinkGroupComponent|null} LinkGroupComponent instance or null
+     */
+    getLinkGroupComponentById(componentId) {
+        const component = this.getComponentById(componentId);
+        if (component && component.type === 'LinkGroupComponent') {
+            return new LinkGroupComponent(component);
+        }
+        return null;
+    }
+
+    /**
+     * Create a new LinkGroupComponent and add it to the page
+     * @param {Object} options - LinkGroupComponent options
+     * @param {Array} options.links - Initial links array (optional)
+     * @param {string} options.title - Component title (optional)
+     * @param {string} options.style - Component style (optional)
+     * @param {number} options.order - Component order (optional)
+     * @returns {LinkGroupComponent} Created LinkGroupComponent instance
+     */
+    createLinkGroupComponent(options = {}) {
+        const linkGroupComponent = new LinkGroupComponent({
+            data: {
+                links: options.links || [
+                    {
+                        linkText: 'Home',
+                        linkUrl: 'https://example.com/home',
+                        linkTarget: '_self',
+                        order: 0
+                    },
+                    {
+                        linkText: 'About',
+                        linkUrl: 'https://example.com/about',
+                        linkTarget: '_self',
+                        order: 1
+                    }
+                ],
+                title: options.title || 'Link Group',
+                style: options.style || 'default'
+            },
+            order: options.order || this.getNextOrder()
+        });
+
+        this.addComponent(linkGroupComponent.toJSON());
+        return linkGroupComponent;
+    }
+
+    /**
+     * Update LinkGroupComponent data
+     * @param {string} componentId - Component ID
+     * @param {Object} data - New data
+     * @returns {boolean} Success status
+     */
+    updateLinkGroupComponentData(componentId, data) {
+        const linkGroupComponent = this.getLinkGroupComponentById(componentId);
+        if (!linkGroupComponent) {
+            throw new Error(`LinkGroupComponent with ID '${componentId}' not found`);
+        }
+
+        // Validate updated data
+        const updatedData = { ...linkGroupComponent.data, ...data };
+        const validation = linkGroupComponent.validateData(updatedData);
+        if (!validation.isValid) {
+            throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+        }
+
+        linkGroupComponent.data = updatedData;
+        linkGroupComponent.updatedAt = new Date().toISOString();
+        this.updateComponent(componentId, linkGroupComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Add a link to LinkGroupComponent
+     * @param {string} componentId - Component ID
+     * @param {Object} linkData - Link data
+     * @returns {boolean} Success status
+     */
+    addLinkToGroup(componentId, linkData) {
+        const linkGroupComponent = this.getLinkGroupComponentById(componentId);
+        if (!linkGroupComponent) {
+            throw new Error(`LinkGroupComponent with ID '${componentId}' not found`);
+        }
+
+        linkGroupComponent.addLink(linkData);
+        this.updateComponent(componentId, linkGroupComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Remove a link from LinkGroupComponent
+     * @param {string} componentId - Component ID
+     * @param {string} linkId - Link ID
+     * @returns {boolean} Success status
+     */
+    removeLinkFromGroup(componentId, linkId) {
+        const linkGroupComponent = this.getLinkGroupComponentById(componentId);
+        if (!linkGroupComponent) {
+            throw new Error(`LinkGroupComponent with ID '${componentId}' not found`);
+        }
+
+        linkGroupComponent.removeLink(linkId);
+        this.updateComponent(componentId, linkGroupComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update a link in LinkGroupComponent
+     * @param {string} componentId - Component ID
+     * @param {string} linkId - Link ID
+     * @param {Object} updates - Link updates
+     * @returns {boolean} Success status
+     */
+    updateLinkInGroup(componentId, linkId, updates) {
+        const linkGroupComponent = this.getLinkGroupComponentById(componentId);
+        if (!linkGroupComponent) {
+            throw new Error(`LinkGroupComponent with ID '${componentId}' not found`);
+        }
+
+        linkGroupComponent.updateLink(linkId, updates);
+        this.updateComponent(componentId, linkGroupComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Reorder links in LinkGroupComponent
+     * @param {string} componentId - Component ID
+     * @param {Array} linkIds - Array of link IDs in new order
+     * @returns {boolean} Success status
+     */
+    reorderLinksInGroup(componentId, linkIds) {
+        const linkGroupComponent = this.getLinkGroupComponentById(componentId);
+        if (!linkGroupComponent) {
+            throw new Error(`LinkGroupComponent with ID '${componentId}' not found`);
+        }
+
+        linkGroupComponent.reorderLinks(linkIds);
+        this.updateComponent(componentId, linkGroupComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Get link group content statistics
+     * @returns {Object} Link group content statistics
+     */
+    getLinkGroupContentStats() {
+        const linkGroupComponents = this.getLinkGroupComponents();
+        const stats = {
+            totalLinkGroupComponents: linkGroupComponents.length,
+            totalLinks: 0,
+            linksWithValidUrls: 0,
+            linksWithSelfTarget: 0,
+            linksWithBlankTarget: 0,
+            averageLinksPerGroup: 0,
+            averageTextLength: 0
+        };
+
+        let totalTextLength = 0;
+        let totalLinksCount = 0;
+
+        linkGroupComponents.forEach(lgc => {
+            const componentStats = lgc.getStats();
+            stats.totalLinks += componentStats.totalLinks;
+            stats.linksWithValidUrls += componentStats.linksWithValidUrls;
+            stats.linksWithSelfTarget += componentStats.linksWithSelfTarget;
+            stats.linksWithBlankTarget += componentStats.linksWithBlankTarget;
+            totalTextLength += componentStats.totalTextLength;
+            totalLinksCount += componentStats.totalLinks;
+        });
+
+        stats.averageLinksPerGroup = linkGroupComponents.length > 0 ? 
+            Math.round(stats.totalLinks / linkGroupComponents.length) : 0;
+        stats.averageTextLength = totalLinksCount > 0 ? 
+            Math.round(totalTextLength / totalLinksCount) : 0;
+
+        return stats;
+    }
+
+    /**
+     * Search link group content
+     * @param {string} searchTerm - Search term
+     * @returns {Array} Array of matching link components with search context
+     */
+    searchLinkGroupContent(searchTerm) {
+        const matches = [];
+        const linkGroupComponents = this.getLinkGroupComponents();
+
+        linkGroupComponents.forEach(linkGroupComponent => {
+            const linkMatches = linkGroupComponent.searchLinks(searchTerm);
+            linkMatches.forEach(match => {
+                matches.push({
+                    componentId: linkGroupComponent.id,
+                    componentType: 'LinkGroupComponent',
+                    linkId: match.linkId,
+                    field: match.field,
+                    content: match.content,
+                    match: match.match
+                });
+            });
+        });
+
+        return matches;
+    }
+
+    /**
      * Convert to JSON object
      * @returns {Object} JSON representation
      */
