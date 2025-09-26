@@ -154,15 +154,21 @@
     <!-- Main Application -->
     <script src="js/app.js"></script>
     <script>
-        // Initialize the application
-        const app = new TemplatePageEditor();
-        
-        // Load saved theme
-        const savedTheme = localStorage.getItem('templatePageEditor_theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.getElementById('theme').value = savedTheme;
-        }
+        // Wait for DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the application
+            const app = new TemplatePageEditor();
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('templatePageEditor_theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                const themeSelect = document.getElementById('theme');
+                if (themeSelect) {
+                    themeSelect.value = savedTheme;
+                }
+            }
+        });
     </script>
 </body>
 </html>
