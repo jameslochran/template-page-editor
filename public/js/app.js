@@ -636,20 +636,20 @@ class TemplatePageEditor {
                 linkGroupElement.style.padding = '20px';
                 
                 // Title input
-                const titleInput = document.createElement('input');
-                titleInput.type = 'text';
-                titleInput.value = linkGroupData.data.title;
-                titleInput.style.width = '100%';
-                titleInput.style.border = 'none';
-                titleInput.style.outline = 'none';
-                titleInput.style.fontSize = '20px';
-                titleInput.style.fontWeight = '600';
-                titleInput.style.marginBottom = '15px';
-                titleInput.style.backgroundColor = 'transparent';
-                titleInput.style.borderBottom = '2px solid #e2e8f0';
-                titleInput.style.paddingBottom = '5px';
-                titleInput.addEventListener('blur', () => {
-                    this.updateLinkGroupTitle(linkGroupData.id, titleInput.value);
+                const linkGroupTitleInput = document.createElement('input');
+                linkGroupTitleInput.type = 'text';
+                linkGroupTitleInput.value = linkGroupData.data.title;
+                linkGroupTitleInput.style.width = '100%';
+                linkGroupTitleInput.style.border = 'none';
+                linkGroupTitleInput.style.outline = 'none';
+                linkGroupTitleInput.style.fontSize = '20px';
+                linkGroupTitleInput.style.fontWeight = '600';
+                linkGroupTitleInput.style.marginBottom = '15px';
+                linkGroupTitleInput.style.backgroundColor = 'transparent';
+                linkGroupTitleInput.style.borderBottom = '2px solid #e2e8f0';
+                linkGroupTitleInput.style.paddingBottom = '5px';
+                linkGroupTitleInput.addEventListener('blur', () => {
+                    this.updateLinkGroupTitle(linkGroupData.id, linkGroupTitleInput.value);
                 });
                 
                 // Links container
@@ -690,7 +690,7 @@ class TemplatePageEditor {
                 
                 controlsContainer.appendChild(addLinkButton);
                 
-                linkGroupElement.appendChild(titleInput);
+                linkGroupElement.appendChild(linkGroupTitleInput);
                 linkGroupElement.appendChild(linksContainer);
                 linkGroupElement.appendChild(controlsContainer);
                 
@@ -1765,24 +1765,24 @@ class TemplatePageEditor {
         linkTextInput.addEventListener('blur', () => {
             this.updateLinkInGroup(linkGroupId, linkData.id, {
                 linkText: linkTextInput.value,
-                linkUrl: linkUrlInput.value,
+                linkUrl: linkGroupLinkUrlInput.value,
                 linkTarget: linkTargetSelect.value
             });
         });
         
         // Link URL input
-        const linkUrlInput = document.createElement('input');
-        linkUrlInput.type = 'url';
-        linkUrlInput.value = linkData.linkUrl;
-        linkUrlInput.style.flex = '2';
-        linkUrlInput.style.border = 'none';
-        linkUrlInput.style.outline = 'none';
-        linkUrlInput.style.backgroundColor = 'transparent';
-        linkUrlInput.style.padding = '4px';
-        linkUrlInput.addEventListener('blur', () => {
+        const linkGroupLinkUrlInput = document.createElement('input');
+        linkGroupLinkUrlInput.type = 'url';
+        linkGroupLinkUrlInput.value = linkData.linkUrl;
+        linkGroupLinkUrlInput.style.flex = '2';
+        linkGroupLinkUrlInput.style.border = 'none';
+        linkGroupLinkUrlInput.style.outline = 'none';
+        linkGroupLinkUrlInput.style.backgroundColor = 'transparent';
+        linkGroupLinkUrlInput.style.padding = '4px';
+        linkGroupLinkUrlInput.addEventListener('blur', () => {
             this.updateLinkInGroup(linkGroupId, linkData.id, {
                 linkText: linkTextInput.value,
-                linkUrl: linkUrlInput.value,
+                linkUrl: linkGroupLinkUrlInput.value,
                 linkTarget: linkTargetSelect.value
             });
         });
@@ -1797,7 +1797,7 @@ class TemplatePageEditor {
         linkTargetSelect.addEventListener('change', () => {
             this.updateLinkInGroup(linkGroupId, linkData.id, {
                 linkText: linkTextInput.value,
-                linkUrl: linkUrlInput.value,
+                linkUrl: linkGroupLinkUrlInput.value,
                 linkTarget: linkTargetSelect.value
             });
         });
@@ -1832,7 +1832,7 @@ class TemplatePageEditor {
         });
         
         linkElement.appendChild(linkTextInput);
-        linkElement.appendChild(linkUrlInput);
+        linkElement.appendChild(linkGroupLinkUrlInput);
         linkElement.appendChild(linkTargetSelect);
         linkElement.appendChild(removeButton);
         
