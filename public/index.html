@@ -143,21 +143,30 @@
     </div>
 
         <!-- Data Models -->
-        <script src="js/models/TextComponent.js"></script>
-        <script src="js/models/AccordionComponent.js"></script>
-        <script src="js/models/CardComponent.js"></script>
-        <script src="js/models/BannerComponent.js"></script>
-        <script src="js/models/Link.js"></script>
-        <script src="js/models/LinkGroupComponent.js"></script>
-        <script src="js/models/Page.js"></script>
+        <script src="js/models/TextComponent.js?v=1.0"></script>
+        <script src="js/models/AccordionComponent.js?v=1.0"></script>
+        <script src="js/models/CardComponent.js?v=1.0"></script>
+        <script src="js/models/BannerComponent.js?v=1.0"></script>
+        <script src="js/models/Link.js?v=1.0"></script>
+        <script src="js/models/LinkGroupComponent.js?v=1.0"></script>
+        <script src="js/models/Page.js?v=1.0"></script>
     
     <!-- Main Application -->
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=1.0"></script>
     <script>
         // Wait for DOM to be fully loaded before initializing
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Initializing app...');
+            
+            // Check if TemplatePageEditor class exists
+            if (typeof TemplatePageEditor === 'undefined') {
+                console.error('TemplatePageEditor class not found!');
+                return;
+            }
+            
             // Initialize the application
             const app = new TemplatePageEditor();
+            console.log('App initialized:', app);
             
             // Load saved theme
             const savedTheme = localStorage.getItem('templatePageEditor_theme');
@@ -168,6 +177,14 @@
                     themeSelect.value = savedTheme;
                 }
             }
+            
+            // Debug: Check if toolbar buttons exist
+            const toolbarButtons = document.querySelectorAll('.toolbar-btn[data-tool]');
+            console.log('Found toolbar buttons:', toolbarButtons.length);
+            
+            // Debug: Check if canvas exists
+            const canvas = document.getElementById('canvas');
+            console.log('Canvas element:', canvas);
         });
     </script>
 </body>
