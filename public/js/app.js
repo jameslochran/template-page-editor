@@ -2309,12 +2309,3 @@ class TemplatePageEditor {
     }
 }
 
-// Initialize the application
-const app = new TemplatePageEditor();
-
-// Load saved theme
-const savedTheme = localStorage.getItem('templatePageEditor_theme');
-if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.getElementById('theme').value = savedTheme;
-}
