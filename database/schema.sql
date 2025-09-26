@@ -211,6 +211,39 @@ CHECK (
     )
 );
 
+-- Validate CardComponent data structure
+ALTER TABLE Page 
+ADD CONSTRAINT check_card_component_structure 
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(components)
+        WHERE value->>'type' = 'CardComponent'
+        AND (
+            NOT (value->'data' ? 'title') OR
+            NOT (value->'data' ? 'description') OR
+            NOT (value->'data' ? 'imageUrl') OR
+            NOT (value->'data' ? 'altText') OR
+            NOT (value->'data' ? 'linkUrl') OR
+            NOT (value->'data' ? 'linkText') OR
+            NOT (value->'data' ? 'linkTarget') OR
+            jsonb_typeof(value->'data'->'title') != 'string' OR
+            jsonb_typeof(value->'data'->'description') != 'object' OR
+            jsonb_typeof(value->'data'->'imageUrl') != 'string' OR
+            jsonb_typeof(value->'data'->'altText') != 'string' OR
+            jsonb_typeof(value->'data'->'linkUrl') != 'string' OR
+            jsonb_typeof(value->'data'->'linkText') != 'string' OR
+            jsonb_typeof(value->'data'->'linkTarget') != 'string' OR
+            length(value->'data'->>'title') > 255 OR
+            length(value->'data'->>'imageUrl') > 2048 OR
+            length(value->'data'->>'altText') > 255 OR
+            length(value->'data'->>'linkUrl') > 2048 OR
+            length(value->'data'->>'linkText') > 255 OR
+            value->'data'->>'linkTarget' NOT IN ('_self', '_blank')
+        )
+    )
+);
+
 -- =====================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
 -- =====================================================
@@ -478,6 +511,80 @@ INSERT INTO Page (template_id, components) VALUES
                     "style": "default"
                 },
                 "order": 1
+            }
+        ]'::jsonb
+    ),
+    (
+        (SELECT id FROM Template WHERE name = 'Hero Landing Page' LIMIT 1),
+        '[
+            {
+                "id": "card-001",
+                "type": "CardComponent",
+                "data": {
+                    "title": "Welcome to Our Platform",
+                    "description": {
+                        "format": "html",
+                        "data": "<p>Discover amazing features and create beautiful content with our powerful tools. Perfect for businesses and individuals alike.</p>",
+                        "metadata": {
+                            "version": "1.0",
+                            "created": "2024-01-01T00:00:00Z",
+                            "lastModified": "2024-01-01T00:00:00Z"
+                        }
+                    },
+                    "imageUrl": "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                    "altText": "Modern workspace with laptop and coffee",
+                    "linkUrl": "/features",
+                    "linkText": "Learn More",
+                    "linkTarget": "_self",
+                    "style": "default"
+                },
+                "order": 1
+            },
+            {
+                "id": "card-002",
+                "type": "CardComponent",
+                "data": {
+                    "title": "Advanced Analytics",
+                    "description": {
+                        "format": "html",
+                        "data": "<p>Get detailed insights into your content performance with our comprehensive analytics dashboard.</p>",
+                        "metadata": {
+                            "version": "1.0",
+                            "created": "2024-01-01T00:00:00Z",
+                            "lastModified": "2024-01-01T00:00:00Z"
+                        }
+                    },
+                    "imageUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                    "altText": "Data visualization charts and graphs",
+                    "linkUrl": "/analytics",
+                    "linkText": "View Dashboard",
+                    "linkTarget": "_blank",
+                    "style": "default"
+                },
+                "order": 2
+            },
+            {
+                "id": "card-003",
+                "type": "CardComponent",
+                "data": {
+                    "title": "Team Collaboration",
+                    "description": {
+                        "format": "html",
+                        "data": "<p>Work together seamlessly with your team using our collaborative editing features and real-time updates.</p>",
+                        "metadata": {
+                            "version": "1.0",
+                            "created": "2024-01-01T00:00:00Z",
+                            "lastModified": "2024-01-01T00:00:00Z"
+                        }
+                    },
+                    "imageUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                    "altText": "Team members collaborating around a table",
+                    "linkUrl": "/collaboration",
+                    "linkText": "Start Collaborating",
+                    "linkTarget": "_self",
+                    "style": "default"
+                },
+                "order": 3
             }
         ]'::jsonb
     );

@@ -1,6 +1,7 @@
 // Template Page Editor JavaScript Application
 // Work Order #8: TextComponent Data Model Structure Integration
 // Work Order #13: Accordion Component Data Model Structure Integration
+// Work Order #18: CardComponent Data Model Structure and Validation
 
 class TemplatePageEditor {
     constructor() {
@@ -234,6 +235,188 @@ class TemplatePageEditor {
                 
                 // Store component data
                 element.setAttribute('data-component', JSON.stringify(accordionData));
+                break;
+                
+            case 'card':
+                // Create CardComponent using structured data model
+                const cardComponent = CardComponent.createDefault();
+                const cardData = cardComponent.toJSON();
+                
+                // Create card HTML structure
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-component';
+                cardElement.setAttribute('data-card-data', JSON.stringify(cardData));
+                cardElement.style.width = '300px';
+                cardElement.style.minHeight = '400px';
+                cardElement.style.border = '1px solid #e2e8f0';
+                cardElement.style.borderRadius = '8px';
+                cardElement.style.backgroundColor = 'white';
+                cardElement.style.overflow = 'hidden';
+                cardElement.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                
+                // Create card image
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'card-image-container';
+                imageContainer.style.height = '200px';
+                imageContainer.style.backgroundColor = '#f8fafc';
+                imageContainer.style.display = 'flex';
+                imageContainer.style.alignItems = 'center';
+                imageContainer.style.justifyContent = 'center';
+                imageContainer.style.position = 'relative';
+                
+                const imageInput = document.createElement('input');
+                imageInput.type = 'url';
+                imageInput.placeholder = 'Enter image URL...';
+                imageInput.value = cardData.data.imageUrl;
+                imageInput.style.width = '100%';
+                imageInput.style.height = '100%';
+                imageInput.style.border = 'none';
+                imageInput.style.outline = 'none';
+                imageInput.style.padding = '10px';
+                imageInput.style.backgroundColor = 'transparent';
+                imageInput.addEventListener('blur', () => {
+                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
+                });
+                
+                const altInput = document.createElement('input');
+                altInput.type = 'text';
+                altInput.placeholder = 'Alt text...';
+                altInput.value = cardData.data.altText;
+                altInput.style.position = 'absolute';
+                altInput.style.bottom = '10px';
+                altInput.style.left = '10px';
+                altInput.style.right = '10px';
+                altInput.style.padding = '5px';
+                altInput.style.border = 'none';
+                altInput.style.outline = 'none';
+                altInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                altInput.style.borderRadius = '4px';
+                altInput.addEventListener('blur', () => {
+                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
+                });
+                
+                imageContainer.appendChild(imageInput);
+                imageContainer.appendChild(altInput);
+                
+                // Create card content
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'card-content-container';
+                contentContainer.style.padding = '16px';
+                
+                // Title input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.value = cardData.data.title;
+                titleInput.style.width = '100%';
+                titleInput.style.border = 'none';
+                titleInput.style.outline = 'none';
+                titleInput.style.fontSize = '18px';
+                titleInput.style.fontWeight = '600';
+                titleInput.style.marginBottom = '12px';
+                titleInput.style.backgroundColor = 'transparent';
+                titleInput.addEventListener('blur', () => {
+                    this.updateCardTitle(cardData.id, titleInput.value);
+                });
+                
+                // Description editor
+                const descriptionEditor = document.createElement('div');
+                descriptionEditor.className = 'card-description-editor';
+                descriptionEditor.contentEditable = true;
+                descriptionEditor.innerHTML = cardData.data.description.data;
+                descriptionEditor.style.minHeight = '60px';
+                descriptionEditor.style.border = '1px solid transparent';
+                descriptionEditor.style.borderRadius = '4px';
+                descriptionEditor.style.padding = '8px';
+                descriptionEditor.style.outline = 'none';
+                descriptionEditor.style.fontSize = '14px';
+                descriptionEditor.style.lineHeight = '1.5';
+                descriptionEditor.addEventListener('focus', () => {
+                    descriptionEditor.style.border = '1px solid #2563eb';
+                    descriptionEditor.style.backgroundColor = '#f8fafc';
+                });
+                descriptionEditor.addEventListener('blur', () => {
+                    descriptionEditor.style.border = '1px solid transparent';
+                    descriptionEditor.style.backgroundColor = 'transparent';
+                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
+                });
+                descriptionEditor.addEventListener('input', () => {
+                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
+                });
+                
+                // Link inputs
+                const linkContainer = document.createElement('div');
+                linkContainer.style.marginTop = '12px';
+                linkContainer.style.display = 'flex';
+                linkContainer.style.gap = '8px';
+                linkContainer.style.flexDirection = 'column';
+                
+                const linkUrlInput = document.createElement('input');
+                linkUrlInput.type = 'url';
+                linkUrlInput.placeholder = 'Link URL...';
+                linkUrlInput.value = cardData.data.linkUrl;
+                linkUrlInput.style.width = '100%';
+                linkUrlInput.style.padding = '6px';
+                linkUrlInput.style.border = '1px solid #e2e8f0';
+                linkUrlInput.style.borderRadius = '4px';
+                linkUrlInput.style.outline = 'none';
+                linkUrlInput.style.fontSize = '14px';
+                linkUrlInput.addEventListener('blur', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const linkTextInput = document.createElement('input');
+                linkTextInput.type = 'text';
+                linkTextInput.placeholder = 'Link text...';
+                linkTextInput.value = cardData.data.linkText;
+                linkTextInput.style.width = '100%';
+                linkTextInput.style.padding = '6px';
+                linkTextInput.style.border = '1px solid #e2e8f0';
+                linkTextInput.style.borderRadius = '4px';
+                linkTextInput.style.outline = 'none';
+                linkTextInput.style.fontSize = '14px';
+                linkTextInput.addEventListener('blur', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const linkTargetSelect = document.createElement('select');
+                linkTargetSelect.style.width = '100%';
+                linkTargetSelect.style.padding = '6px';
+                linkTargetSelect.style.border = '1px solid #e2e8f0';
+                linkTargetSelect.style.borderRadius = '4px';
+                linkTargetSelect.style.outline = 'none';
+                linkTargetSelect.style.fontSize = '14px';
+                linkTargetSelect.value = cardData.data.linkTarget;
+                linkTargetSelect.addEventListener('change', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const selfOption = document.createElement('option');
+                selfOption.value = '_self';
+                selfOption.textContent = 'Same window';
+                const blankOption = document.createElement('option');
+                blankOption.value = '_blank';
+                blankOption.textContent = 'New window';
+                
+                linkTargetSelect.appendChild(selfOption);
+                linkTargetSelect.appendChild(blankOption);
+                
+                linkContainer.appendChild(linkUrlInput);
+                linkContainer.appendChild(linkTextInput);
+                linkContainer.appendChild(linkTargetSelect);
+                
+                contentContainer.appendChild(titleInput);
+                contentContainer.appendChild(descriptionEditor);
+                contentContainer.appendChild(linkContainer);
+                
+                cardElement.appendChild(imageContainer);
+                cardElement.appendChild(contentContainer);
+                
+                element.appendChild(cardElement);
+                element.style.width = '300px';
+                element.style.minHeight = '400px';
+                
+                // Store component data
+                element.setAttribute('data-component', JSON.stringify(cardData));
                 break;
                 
             case 'image':
@@ -645,6 +828,182 @@ class TemplatePageEditor {
                 element.appendChild(accordionElement);
                 break;
                 
+            case 'CardComponent':
+                const cardComponent = new CardComponent(component);
+                const cardData = cardComponent.toJSON();
+                
+                // Create card HTML structure
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-component';
+                cardElement.setAttribute('data-card-data', JSON.stringify(cardData));
+                cardElement.style.width = '300px';
+                cardElement.style.minHeight = '400px';
+                cardElement.style.border = '1px solid #e2e8f0';
+                cardElement.style.borderRadius = '8px';
+                cardElement.style.backgroundColor = 'white';
+                cardElement.style.overflow = 'hidden';
+                cardElement.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                
+                // Create card image
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'card-image-container';
+                imageContainer.style.height = '200px';
+                imageContainer.style.backgroundColor = '#f8fafc';
+                imageContainer.style.display = 'flex';
+                imageContainer.style.alignItems = 'center';
+                imageContainer.style.justifyContent = 'center';
+                imageContainer.style.position = 'relative';
+                
+                const imageInput = document.createElement('input');
+                imageInput.type = 'url';
+                imageInput.placeholder = 'Enter image URL...';
+                imageInput.value = cardData.data.imageUrl;
+                imageInput.style.width = '100%';
+                imageInput.style.height = '100%';
+                imageInput.style.border = 'none';
+                imageInput.style.outline = 'none';
+                imageInput.style.padding = '10px';
+                imageInput.style.backgroundColor = 'transparent';
+                imageInput.addEventListener('blur', () => {
+                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
+                });
+                
+                const altInput = document.createElement('input');
+                altInput.type = 'text';
+                altInput.placeholder = 'Alt text...';
+                altInput.value = cardData.data.altText;
+                altInput.style.position = 'absolute';
+                altInput.style.bottom = '10px';
+                altInput.style.left = '10px';
+                altInput.style.right = '10px';
+                altInput.style.padding = '5px';
+                altInput.style.border = 'none';
+                altInput.style.outline = 'none';
+                altInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                altInput.style.borderRadius = '4px';
+                altInput.addEventListener('blur', () => {
+                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
+                });
+                
+                imageContainer.appendChild(imageInput);
+                imageContainer.appendChild(altInput);
+                
+                // Create card content
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'card-content-container';
+                contentContainer.style.padding = '16px';
+                
+                // Title input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.value = cardData.data.title;
+                titleInput.style.width = '100%';
+                titleInput.style.border = 'none';
+                titleInput.style.outline = 'none';
+                titleInput.style.fontSize = '18px';
+                titleInput.style.fontWeight = '600';
+                titleInput.style.marginBottom = '12px';
+                titleInput.style.backgroundColor = 'transparent';
+                titleInput.addEventListener('blur', () => {
+                    this.updateCardTitle(cardData.id, titleInput.value);
+                });
+                
+                // Description editor
+                const descriptionEditor = document.createElement('div');
+                descriptionEditor.className = 'card-description-editor';
+                descriptionEditor.contentEditable = true;
+                descriptionEditor.innerHTML = cardData.data.description.data;
+                descriptionEditor.style.minHeight = '60px';
+                descriptionEditor.style.border = '1px solid transparent';
+                descriptionEditor.style.borderRadius = '4px';
+                descriptionEditor.style.padding = '8px';
+                descriptionEditor.style.outline = 'none';
+                descriptionEditor.style.fontSize = '14px';
+                descriptionEditor.style.lineHeight = '1.5';
+                descriptionEditor.addEventListener('focus', () => {
+                    descriptionEditor.style.border = '1px solid #2563eb';
+                    descriptionEditor.style.backgroundColor = '#f8fafc';
+                });
+                descriptionEditor.addEventListener('blur', () => {
+                    descriptionEditor.style.border = '1px solid transparent';
+                    descriptionEditor.style.backgroundColor = 'transparent';
+                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
+                });
+                descriptionEditor.addEventListener('input', () => {
+                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
+                });
+                
+                // Link inputs
+                const linkContainer = document.createElement('div');
+                linkContainer.style.marginTop = '12px';
+                linkContainer.style.display = 'flex';
+                linkContainer.style.gap = '8px';
+                linkContainer.style.flexDirection = 'column';
+                
+                const linkUrlInput = document.createElement('input');
+                linkUrlInput.type = 'url';
+                linkUrlInput.placeholder = 'Link URL...';
+                linkUrlInput.value = cardData.data.linkUrl;
+                linkUrlInput.style.width = '100%';
+                linkUrlInput.style.padding = '6px';
+                linkUrlInput.style.border = '1px solid #e2e8f0';
+                linkUrlInput.style.borderRadius = '4px';
+                linkUrlInput.style.outline = 'none';
+                linkUrlInput.style.fontSize = '14px';
+                linkUrlInput.addEventListener('blur', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const linkTextInput = document.createElement('input');
+                linkTextInput.type = 'text';
+                linkTextInput.placeholder = 'Link text...';
+                linkTextInput.value = cardData.data.linkText;
+                linkTextInput.style.width = '100%';
+                linkTextInput.style.padding = '6px';
+                linkTextInput.style.border = '1px solid #e2e8f0';
+                linkTextInput.style.borderRadius = '4px';
+                linkTextInput.style.outline = 'none';
+                linkTextInput.style.fontSize = '14px';
+                linkTextInput.addEventListener('blur', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const linkTargetSelect = document.createElement('select');
+                linkTargetSelect.style.width = '100%';
+                linkTargetSelect.style.padding = '6px';
+                linkTargetSelect.style.border = '1px solid #e2e8f0';
+                linkTargetSelect.style.borderRadius = '4px';
+                linkTargetSelect.style.outline = 'none';
+                linkTargetSelect.style.fontSize = '14px';
+                linkTargetSelect.value = cardData.data.linkTarget;
+                linkTargetSelect.addEventListener('change', () => {
+                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
+                });
+                
+                const selfOption = document.createElement('option');
+                selfOption.value = '_self';
+                selfOption.textContent = 'Same window';
+                const blankOption = document.createElement('option');
+                blankOption.value = '_blank';
+                blankOption.textContent = 'New window';
+                
+                linkTargetSelect.appendChild(selfOption);
+                linkTargetSelect.appendChild(blankOption);
+                
+                linkContainer.appendChild(linkUrlInput);
+                linkContainer.appendChild(linkTextInput);
+                linkContainer.appendChild(linkTargetSelect);
+                
+                contentContainer.appendChild(titleInput);
+                contentContainer.appendChild(descriptionEditor);
+                contentContainer.appendChild(linkContainer);
+                
+                cardElement.appendChild(imageContainer);
+                cardElement.appendChild(contentContainer);
+                
+                element.appendChild(cardElement);
+                break;
+                
             default:
                 element.innerHTML = `<div class="unknown-component">Unknown Component: ${component.type}</div>`;
                 element.style.width = '200px';
@@ -963,6 +1322,81 @@ class TemplatePageEditor {
             } catch (error) {
                 console.error('Failed to update accordion item content:', error);
                 this.showNotification('Failed to update content: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update card title
+     * @param {string} componentId - Component ID
+     * @param {string} title - New title
+     */
+    updateCardTitle(componentId, title) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateCardComponentTitle(componentId, title);
+            } catch (error) {
+                console.error('Failed to update card title:', error);
+                this.showNotification('Failed to update title: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update card description
+     * @param {string} componentId - Component ID
+     * @param {string} description - New description HTML
+     */
+    updateCardDescription(componentId, description) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateCardComponentDescription(componentId, {
+                    format: 'html',
+                    data: description,
+                    metadata: {
+                        version: '1.0',
+                        created: new Date().toISOString(),
+                        lastModified: new Date().toISOString()
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to update card description:', error);
+                this.showNotification('Failed to update description: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update card image
+     * @param {string} componentId - Component ID
+     * @param {string} imageUrl - New image URL
+     * @param {string} altText - New alt text
+     */
+    updateCardImage(componentId, imageUrl, altText) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateCardComponentImage(componentId, imageUrl, altText);
+            } catch (error) {
+                console.error('Failed to update card image:', error);
+                this.showNotification('Failed to update image: ' + error.message, 'error');
+            }
+        }
+    }
+
+    /**
+     * Update card link
+     * @param {string} componentId - Component ID
+     * @param {string} linkUrl - New link URL
+     * @param {string} linkText - New link text
+     * @param {string} linkTarget - New link target
+     */
+    updateCardLink(componentId, linkUrl, linkText, linkTarget) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateCardComponentLink(componentId, linkUrl, linkText, linkTarget);
+            } catch (error) {
+                console.error('Failed to update card link:', error);
+                this.showNotification('Failed to update link: ' + error.message, 'error');
             }
         }
     }

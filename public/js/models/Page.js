@@ -565,6 +565,208 @@ class Page {
     }
 
     /**
+     * Get all CardComponents on the page
+     * @returns {Array} Array of CardComponent instances
+     */
+    getCardComponents() {
+        return this.components
+            .filter(c => c.type === 'CardComponent')
+            .map(c => new CardComponent(c));
+    }
+
+    /**
+     * Get CardComponent by ID
+     * @param {string} componentId - Component ID
+     * @returns {CardComponent|null} CardComponent instance or null
+     */
+    getCardComponentById(componentId) {
+        const component = this.getComponentById(componentId);
+        if (component && component.type === 'CardComponent') {
+            return new CardComponent(component);
+        }
+        return null;
+    }
+
+    /**
+     * Create a new CardComponent and add it to the page
+     * @param {Object} options - CardComponent options
+     * @param {string} options.title - Card title (optional)
+     * @param {Object} options.description - Card description (optional)
+     * @param {string} options.imageUrl - Image URL (optional)
+     * @param {string} options.altText - Alt text (optional)
+     * @param {string} options.linkUrl - Link URL (optional)
+     * @param {string} options.linkText - Link text (optional)
+     * @param {string} options.linkTarget - Link target (optional)
+     * @param {string} options.style - Component style (optional)
+     * @param {number} options.order - Component order (optional)
+     * @returns {CardComponent} Created CardComponent instance
+     */
+    createCardComponent(options = {}) {
+        const cardComponent = new CardComponent({
+            data: {
+                title: options.title || 'Card Title',
+                description: options.description || {
+                    format: 'html',
+                    data: '<p>Card description goes here...</p>',
+                    metadata: {
+                        version: '1.0',
+                        created: new Date().toISOString(),
+                        lastModified: new Date().toISOString()
+                    }
+                },
+                imageUrl: options.imageUrl || '',
+                altText: options.altText || '',
+                linkUrl: options.linkUrl || '',
+                linkText: options.linkText || '',
+                linkTarget: options.linkTarget || '_self',
+                style: options.style || 'default'
+            },
+            order: options.order || this.getNextOrder()
+        });
+
+        this.addComponent(cardComponent.toJSON());
+        return cardComponent;
+    }
+
+    /**
+     * Update CardComponent data
+     * @param {string} componentId - Component ID
+     * @param {Object} data - New data
+     * @returns {boolean} Success status
+     */
+    updateCardComponentData(componentId, data) {
+        const cardComponent = this.getCardComponentById(componentId);
+        if (!cardComponent) {
+            throw new Error(`CardComponent with ID '${componentId}' not found`);
+        }
+
+        cardComponent.updateData(data);
+        this.updateComponent(componentId, cardComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update CardComponent title
+     * @param {string} componentId - Component ID
+     * @param {string} title - New title
+     * @returns {boolean} Success status
+     */
+    updateCardComponentTitle(componentId, title) {
+        return this.updateCardComponentData(componentId, { title });
+    }
+
+    /**
+     * Update CardComponent description
+     * @param {string} componentId - Component ID
+     * @param {Object} description - New description
+     * @returns {boolean} Success status
+     */
+    updateCardComponentDescription(componentId, description) {
+        return this.updateCardComponentData(componentId, { description });
+    }
+
+    /**
+     * Update CardComponent image
+     * @param {string} componentId - Component ID
+     * @param {string} imageUrl - New image URL
+     * @param {string} altText - New alt text
+     * @returns {boolean} Success status
+     */
+    updateCardComponentImage(componentId, imageUrl, altText = '') {
+        return this.updateCardComponentData(componentId, { imageUrl, altText });
+    }
+
+    /**
+     * Update CardComponent link
+     * @param {string} componentId - Component ID
+     * @param {string} linkUrl - New link URL
+     * @param {string} linkText - New link text
+     * @param {string} linkTarget - New link target
+     * @returns {boolean} Success status
+     */
+    updateCardComponentLink(componentId, linkUrl, linkText = '', linkTarget = '_self') {
+        return this.updateCardComponentData(componentId, { linkUrl, linkText, linkTarget });
+    }
+
+    /**
+     * Get card content statistics
+     * @returns {Object} Card content statistics
+     */
+    getCardContentStats() {
+        const cardComponents = this.getCardComponents();
+        const stats = {
+            totalCardComponents: cardComponents.length,
+            cardsWithImages: 0,
+            cardsWithLinks: 0,
+            totalTitleCharacters: 0,
+            totalDescriptionCharacters: 0,
+            totalDescriptionWords: 0,
+            averageTitleLength: 0,
+            averageDescriptionLength: 0
+        };
+
+        cardComponents.forEach(cc => {
+            const componentStats = cc.getContentStats();
+            stats.totalTitleCharacters += componentStats.titleLength;
+            stats.totalDescriptionCharacters += componentStats.descriptionLength;
+            stats.totalDescriptionWords += componentStats.descriptionWords;
+            
+            if (componentStats.hasImage) {
+                stats.cardsWithImages++;
+            }
+            
+            if (componentStats.hasLink) {
+                stats.cardsWithLinks++;
+            }
+        });
+
+        stats.averageTitleLength = cardComponents.length > 0 ? 
+            Math.round(stats.totalTitleCharacters / cardComponents.length) : 0;
+        stats.averageDescriptionLength = cardComponents.length > 0 ? 
+            Math.round(stats.totalDescriptionCharacters / cardComponents.length) : 0;
+
+        return stats;
+    }
+
+    /**
+     * Search card content
+     * @param {string} searchTerm - Search term
+     * @returns {Array} Array of matching card components with search context
+     */
+    searchCardContent(searchTerm) {
+        const matches = [];
+        const cardComponents = this.getCardComponents();
+
+        cardComponents.forEach(cardComponent => {
+            const title = cardComponent.getTitle().toLowerCase();
+            const description = cardComponent.getDescriptionAsPlainText().toLowerCase();
+            const searchLower = searchTerm.toLowerCase();
+
+            if (title.includes(searchLower)) {
+                matches.push({
+                    componentId: cardComponent.id,
+                    componentType: 'CardComponent',
+                    field: 'title',
+                    content: cardComponent.getTitle(),
+                    match: searchTerm
+                });
+            }
+
+            if (description.includes(searchLower)) {
+                matches.push({
+                    componentId: cardComponent.id,
+                    componentType: 'CardComponent',
+                    field: 'description',
+                    content: cardComponent.getDescriptionAsPlainText(),
+                    match: searchTerm
+                });
+            }
+        });
+
+        return matches;
+    }
+
+    /**
      * Convert to JSON object
      * @returns {Object} JSON representation
      */
