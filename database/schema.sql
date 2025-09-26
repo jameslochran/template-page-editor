@@ -313,6 +313,35 @@ CHECK (
 );
 
 -- =====================================================
+-- PAGE VERSION TABLE
+-- =====================================================
+-- Stores version history and snapshots of pages for restoration and tracking purposes
+CREATE TABLE PageVersion (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    page_id UUID NOT NULL REFERENCES Page(id) ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id UUID NOT NULL, -- Foreign key to User table (when available)
+    version_name VARCHAR(255),
+    change_description TEXT,
+    components JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for PageVersion table
+CREATE INDEX idx_page_version_page_id ON PageVersion(page_id);
+CREATE INDEX idx_page_version_user_id ON PageVersion(user_id);
+CREATE INDEX idx_page_version_timestamp ON PageVersion(timestamp);
+CREATE INDEX idx_page_version_version_number ON PageVersion(page_id, version_number);
+CREATE INDEX idx_page_version_components_gin ON PageVersion USING GIN (components);
+
+-- Unique constraint to ensure version numbers are unique per page
+ALTER TABLE PageVersion 
+ADD CONSTRAINT uk_page_version_page_version 
+UNIQUE (page_id, version_number);
+
+-- =====================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
 -- =====================================================
 
@@ -340,6 +369,12 @@ CREATE TRIGGER update_template_updated_at
 -- Trigger for Page table
 CREATE TRIGGER update_page_updated_at 
     BEFORE UPDATE ON Page 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for PageVersion table
+CREATE TRIGGER update_page_version_updated_at 
+    BEFORE UPDATE ON PageVersion 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -762,6 +797,29 @@ SELECT
 FROM Page p
 JOIN Template t ON p.template_id = t.id;
 
+-- View for page version history
+CREATE VIEW page_version_history AS
+SELECT 
+    pv.id,
+    pv.page_id,
+    pv.version_number,
+    pv.timestamp,
+    pv.user_id,
+    pv.version_name,
+    pv.change_description,
+    pv.created_at,
+    pv.updated_at,
+    -- Component statistics
+    jsonb_array_length(pv.components) as component_count,
+    -- Version metadata
+    CASE 
+        WHEN pv.version_number = (SELECT MAX(version_number) FROM PageVersion pv2 WHERE pv2.page_id = pv.page_id)
+        THEN true 
+        ELSE false 
+    END as is_latest_version
+FROM PageVersion pv
+ORDER BY pv.page_id, pv.version_number DESC;
+
 -- =====================================================
 -- COMMENTS FOR DOCUMENTATION
 -- =====================================================
@@ -769,6 +827,7 @@ JOIN Template t ON p.template_id = t.id;
 COMMENT ON TABLE Category IS 'Stores template categories for organization and filtering in the template browser';
 COMMENT ON TABLE Template IS 'Stores template metadata and component configurations for the template browser system';
 COMMENT ON TABLE Page IS 'Stores pages with their component instances and configurations for dynamic page content creation';
+COMMENT ON TABLE PageVersion IS 'Stores version history and snapshots of pages for restoration and tracking purposes';
 
 COMMENT ON COLUMN Category.id IS 'Unique identifier for the category (UUID)';
 COMMENT ON COLUMN Category.name IS 'Unique category name for display and filtering';
@@ -785,6 +844,15 @@ COMMENT ON COLUMN Page.id IS 'Unique identifier for the page (UUID)';
 COMMENT ON COLUMN Page.template_id IS 'Foreign key reference to Template.id linking page to source template';
 COMMENT ON COLUMN Page.components IS 'JSONB array containing component instances with id, type, data, and order fields';
 
+COMMENT ON COLUMN PageVersion.id IS 'Unique identifier for the page version (UUID)';
+COMMENT ON COLUMN PageVersion.page_id IS 'Foreign key reference to Page.id linking version to source page';
+COMMENT ON COLUMN PageVersion.version_number IS 'Sequential version number for the page, auto-incremented per page';
+COMMENT ON COLUMN PageVersion.timestamp IS 'When this version was created';
+COMMENT ON COLUMN PageVersion.user_id IS 'User who created this version';
+COMMENT ON COLUMN PageVersion.version_name IS 'Optional human-readable name for this version';
+COMMENT ON COLUMN PageVersion.change_description IS 'Optional description of changes made in this version';
+COMMENT ON COLUMN PageVersion.components IS 'Complete JSONB snapshot of page components at time of version creation';
+
 COMMENT ON CONSTRAINT check_components_structure ON Template IS 'Ensures components field contains valid JSONB array with required object structure';
 COMMENT ON CONSTRAINT check_preview_image_url_format ON Template IS 'Basic validation for preview image URL format';
 
@@ -795,3 +863,4 @@ COMMENT ON CONSTRAINT check_valid_component_types ON Page IS 'Validates that onl
 
 COMMENT ON VIEW page_with_template IS 'Combines page data with template and category information for easy querying';
 COMMENT ON VIEW page_component_stats IS 'Provides component statistics and types for each page';
+COMMENT ON VIEW page_version_history IS 'Convenient view for querying page version history with metadata';

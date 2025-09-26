@@ -8,6 +8,99 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// In-memory data structures for templates and categories
+const categories = [
+  { id: '550e8400-e29b-41d4-a716-446655440001', name: 'Business' },
+  { id: '550e8400-e29b-41d4-a716-446655440002', name: 'E-commerce' },
+  { id: '550e8400-e29b-41d4-a716-446655440003', name: 'Landing Page' },
+  { id: '550e8400-e29b-41d4-a716-446655440004', name: 'Portfolio' },
+  { id: '550e8400-e29b-41d4-a716-446655440005', name: 'Blog' },
+  { id: '550e8400-e29b-41d4-a716-446655440006', name: 'Corporate' }
+];
+
+const templates = [
+  {
+    id: '650e8400-e29b-41d4-a716-446655440001',
+    name: 'Modern Business Homepage',
+    description: 'A clean and professional business homepage template with hero section, services, and contact information.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440001',
+    thumbnail: '/images/templates/business-homepage.jpg',
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-15T10:00:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440002',
+    name: 'E-commerce Product Showcase',
+    description: 'A responsive e-commerce template featuring product grids, shopping cart, and checkout flow.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440002',
+    thumbnail: '/images/templates/ecommerce-showcase.jpg',
+    createdAt: '2024-01-16T14:30:00Z',
+    updatedAt: '2024-01-16T14:30:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440003',
+    name: 'Creative Portfolio Landing',
+    description: 'A stunning portfolio template perfect for designers, photographers, and creative professionals.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440004',
+    thumbnail: '/images/templates/portfolio-landing.jpg',
+    createdAt: '2024-01-17T09:15:00Z',
+    updatedAt: '2024-01-17T09:15:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440004',
+    name: 'Corporate About Page',
+    description: 'Professional corporate about page template with team section, company history, and values.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440006',
+    thumbnail: '/images/templates/corporate-about.jpg',
+    createdAt: '2024-01-18T11:45:00Z',
+    updatedAt: '2024-01-18T11:45:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440005',
+    name: 'Blog Article Layout',
+    description: 'Clean and readable blog template with article layout, sidebar, and comment section.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440005',
+    thumbnail: '/images/templates/blog-article.jpg',
+    createdAt: '2024-01-19T16:20:00Z',
+    updatedAt: '2024-01-19T16:20:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440006',
+    name: 'SaaS Landing Page',
+    description: 'High-converting SaaS landing page template with pricing tables, testimonials, and CTA sections.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440003',
+    thumbnail: '/images/templates/saas-landing.jpg',
+    createdAt: '2024-01-20T13:10:00Z',
+    updatedAt: '2024-01-20T13:10:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440007',
+    name: 'Restaurant Menu Page',
+    description: 'Appetizing restaurant template featuring menu display, location info, and reservation form.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440001',
+    thumbnail: '/images/templates/restaurant-menu.jpg',
+    createdAt: '2024-01-21T08:30:00Z',
+    updatedAt: '2024-01-21T08:30:00Z',
+    isActive: true
+  },
+  {
+    id: '650e8400-e29b-41d4-a716-446655440008',
+    name: 'Online Store Homepage',
+    description: 'Complete online store template with featured products, categories, and promotional banners.',
+    categoryId: '550e8400-e29b-41d4-a716-446655440002',
+    thumbnail: '/images/templates/online-store.jpg',
+    createdAt: '2024-01-22T15:45:00Z',
+    updatedAt: '2024-01-22T15:45:00Z',
+    isActive: true
+  }
+];
+
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -15,6 +108,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
       connectSrc: ["'self'"],
@@ -44,8 +138,63 @@ app.get('/api/health', (req, res) => {
 
 // API routes for template management
 app.get('/api/templates', (req, res) => {
-  // Placeholder for getting templates
-  res.json([]);
+  try {
+    const { categoryId, keyword, sortBy = 'name' } = req.query;
+    
+    // Validate sortBy parameter
+    const validSortFields = ['name', 'description', 'createdAt', 'updatedAt'];
+    if (sortBy && !validSortFields.includes(sortBy)) {
+      return res.status(400).json({ 
+        error: 'Invalid sortBy parameter', 
+        validFields: validSortFields 
+      });
+    }
+    
+    // Validate categoryId format if provided
+    if (categoryId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId)) {
+      return res.status(400).json({ 
+        error: 'Invalid categoryId format. Must be a valid UUID.' 
+      });
+    }
+    
+    let filteredTemplates = [...templates];
+    
+    // Filter by categoryId if provided
+    if (categoryId) {
+      filteredTemplates = filteredTemplates.filter(template => 
+        template.categoryId === categoryId
+      );
+    }
+    
+    // Search by keyword if provided
+    if (keyword) {
+      const searchTerm = keyword.toLowerCase();
+      filteredTemplates = filteredTemplates.filter(template => 
+        template.name.toLowerCase().includes(searchTerm) ||
+        template.description.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Sort templates
+    filteredTemplates.sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return aValue.localeCompare(bValue);
+      }
+      
+      if (aValue < bValue) return -1;
+      if (aValue > bValue) return 1;
+      return 0;
+    });
+    
+    res.json(filteredTemplates);
+    
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/api/templates', (req, res) => {
@@ -62,6 +211,35 @@ app.delete('/api/templates/:id', (req, res) => {
   // Placeholder for deleting templates
   res.json({ message: 'Template deleted successfully' });
 });
+
+// API route for getting categories
+app.get('/api/categories', (req, res) => {
+  try {
+    // Return categories sorted alphabetically by name
+    const sortedCategories = [...categories].sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+    
+    res.json(sortedCategories);
+    
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Import and register page API routes
+const pageRoutes = require('./src/api/pages');
+const pageVersionRoutes = require('./src/api/pageVersions');
+const pageShareRoutes = require('./src/api/pageShares');
+app.use('/api/pages', pageRoutes);
+app.use('/api/pages', pageVersionRoutes);
+app.use('/api/pages', pageShareRoutes);
+app.use('/api', pageShareRoutes);
+
+// Import and register admin template upload routes
+const adminTemplatesRoutes = require('./src/api/adminTemplates');
+app.use('/api/admin/templates', adminTemplatesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

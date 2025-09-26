@@ -153,39 +153,5 @@
     
     <!-- Main Application -->
     <script src="js/app.js?v=1.0"></script>
-    <script>
-        // Wait for DOM to be fully loaded before initializing
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Initializing app...');
-            
-            // Check if TemplatePageEditor class exists
-            if (typeof TemplatePageEditor === 'undefined') {
-                console.error('TemplatePageEditor class not found!');
-                return;
-            }
-            
-            // Initialize the application
-            const app = new TemplatePageEditor();
-            console.log('App initialized:', app);
-            
-            // Load saved theme
-            const savedTheme = localStorage.getItem('templatePageEditor_theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-                const themeSelect = document.getElementById('theme');
-                if (themeSelect) {
-                    themeSelect.value = savedTheme;
-                }
-            }
-            
-            // Debug: Check if toolbar buttons exist
-            const toolbarButtons = document.querySelectorAll('.toolbar-btn[data-tool]');
-            console.log('Found toolbar buttons:', toolbarButtons.length);
-            
-            // Debug: Check if canvas exists
-            const canvas = document.getElementById('canvas');
-            console.log('Canvas element:', canvas);
-        });
-    </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ class TemplatePageEditor {
         this.currentTool = null;
         this.templates = [];
         this.currentPage = null;
+        this.selectedComponentId = null; // Track currently selected component
         this.init();
     }
 
@@ -18,6 +19,7 @@ class TemplatePageEditor {
         this.setupEventListeners();
         this.loadTemplates();
         this.setupCanvas();
+        this.setupStateManagement();
     }
 
     setupEventListeners() {
@@ -60,6 +62,17 @@ class TemplatePageEditor {
         // Settings
         document.getElementById('theme').addEventListener('change', (e) => {
             this.changeTheme(e.target.value);
+        });
+
+        // Template actions (using event delegation for dynamically created elements)
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action="load-template"]')) {
+                const templateId = e.target.dataset.templateId;
+                this.loadTemplate(templateId);
+            } else if (e.target.matches('[data-action="delete-template"]')) {
+                const templateId = e.target.dataset.templateId;
+                this.deleteTemplate(templateId);
+            }
         });
     }
 
@@ -118,6 +131,274 @@ class TemplatePageEditor {
         this.observer.observe(canvas, { childList: true });
     }
 
+    // =====================================================
+    // GLOBAL STATE MANAGEMENT
+    // =====================================================
+
+    /**
+     * Setup state management system
+     */
+    setupStateManagement() {
+        // Initialize with PageStateManager if available
+        if (window.PageStateManager) {
+            this.initializeStateManager();
+        }
+    }
+
+    /**
+     * Initialize the state manager
+     */
+    initializeStateManager() {
+        // Create new state manager instance
+        this.stateManager = new PageStateManager();
+        
+        // Setup event listeners for state changes
+        this.setupStateEventListeners();
+        
+        // Update currentPage reference
+        this.currentPage = this.stateManager;
+    }
+
+    /**
+     * Setup event listeners for state changes
+     */
+    setupStateEventListeners() {
+        if (!this.stateManager) return;
+
+        // Component selection events
+        this.stateManager.addEventListener('componentSelected', (data) => {
+            this.handleComponentSelected(data);
+        });
+
+        this.stateManager.addEventListener('componentDeselected', (data) => {
+            this.handleComponentDeselected(data);
+        });
+
+        // Component update events
+        this.stateManager.addEventListener('componentUpdated', (data) => {
+            this.handleComponentUpdated(data);
+        });
+
+        this.stateManager.addEventListener('textComponentUpdated', (data) => {
+            this.handleTextComponentUpdated(data);
+        });
+
+        this.stateManager.addEventListener('accordionItemAdded', (data) => {
+            this.handleAccordionItemAdded(data);
+        });
+
+        this.stateManager.addEventListener('accordionItemRemoved', (data) => {
+            this.handleAccordionItemRemoved(data);
+        });
+
+        this.stateManager.addEventListener('cardTitleUpdated', (data) => {
+            this.handleCardTitleUpdated(data);
+        });
+
+        this.stateManager.addEventListener('bannerHeadlineUpdated', (data) => {
+            this.handleBannerHeadlineUpdated(data);
+        });
+    }
+
+    /**
+     * Set the currently selected component
+     * @param {string} componentId - Component ID to select
+     */
+    setSelectedComponent(componentId) {
+        if (this.stateManager) {
+            this.stateManager.setSelectedComponent(componentId);
+        } else {
+            this.selectedComponentId = componentId;
+            this.updateComponentSelectionVisuals();
+        }
+    }
+
+    /**
+     * Clear the currently selected component
+     */
+    clearSelectedComponent() {
+        if (this.stateManager) {
+            this.stateManager.clearSelectedComponent();
+        } else {
+            this.selectedComponentId = null;
+            this.updateComponentSelectionVisuals();
+        }
+    }
+
+    /**
+     * Get the currently selected component
+     * @returns {Object|null} Selected component or null
+     */
+    getSelectedComponent() {
+        if (this.stateManager) {
+            return this.stateManager.getSelectedComponent();
+        }
+        return this.selectedComponentId ? this.currentPage?.getComponentById(this.selectedComponentId) : null;
+    }
+
+    /**
+     * Handle component selection
+     * @param {Object} data - Selection data
+     */
+    handleComponentSelected(data) {
+        this.selectedComponentId = data.componentId;
+        this.updateComponentSelectionVisuals();
+        
+        // Update editing panel if available
+        this.updateEditingPanel(data.component);
+    }
+
+    /**
+     * Handle component deselection
+     * @param {Object} data - Deselection data
+     */
+    handleComponentDeselected(data) {
+        this.selectedComponentId = null;
+        this.updateComponentSelectionVisuals();
+        
+        // Clear editing panel if available
+        this.clearEditingPanel();
+    }
+
+    /**
+     * Update visual indicators for component selection
+     */
+    updateComponentSelectionVisuals() {
+        // Remove selection from all components
+        document.querySelectorAll('.canvas-element').forEach(element => {
+            element.classList.remove('selected');
+        });
+
+        // Add selection to currently selected component
+        if (this.selectedComponentId) {
+            const selectedElement = document.querySelector(`[data-component-id="${this.selectedComponentId}"]`);
+            if (selectedElement) {
+                selectedElement.closest('.canvas-element').classList.add('selected');
+            }
+        }
+    }
+
+    /**
+     * Handle component updates
+     * @param {Object} data - Update data
+     */
+    handleComponentUpdated(data) {
+        // Re-render the updated component
+        this.rerenderComponent(data.componentId);
+    }
+
+    /**
+     * Handle text component updates
+     * @param {Object} data - Update data
+     */
+    handleTextComponentUpdated(data) {
+        // Update the text editor content
+        const textEditor = document.querySelector(`[data-component-id="${data.componentId}"]`);
+        if (textEditor && textEditor.contentEditable) {
+            const newContent = data.newComponent.content.data;
+            if (textEditor.innerHTML !== newContent) {
+                textEditor.innerHTML = newContent;
+            }
+        }
+    }
+
+    /**
+     * Handle accordion item addition
+     * @param {Object} data - Addition data
+     */
+    handleAccordionItemAdded(data) {
+        // Re-render the accordion component
+        this.rerenderComponent(data.componentId);
+    }
+
+    /**
+     * Handle accordion item removal
+     * @param {Object} data - Removal data
+     */
+    handleAccordionItemRemoved(data) {
+        // Re-render the accordion component
+        this.rerenderComponent(data.componentId);
+    }
+
+    /**
+     * Handle card title updates
+     * @param {Object} data - Update data
+     */
+    handleCardTitleUpdated(data) {
+        // Update the card title in the DOM
+        const cardElement = document.querySelector(`[data-component-id="${data.componentId}"]`);
+        if (cardElement) {
+            const titleElement = cardElement.querySelector('.card-title');
+            if (titleElement) {
+                titleElement.textContent = data.title;
+            }
+        }
+    }
+
+    /**
+     * Handle banner headline updates
+     * @param {Object} data - Update data
+     */
+    handleBannerHeadlineUpdated(data) {
+        // Update the banner headline in the DOM
+        const bannerElement = document.querySelector(`[data-component-id="${data.componentId}"]`);
+        if (bannerElement) {
+            const headlineElement = bannerElement.querySelector('.banner-headline');
+            if (headlineElement) {
+                headlineElement.textContent = data.headlineText;
+            }
+        }
+    }
+
+    /**
+     * Re-render a specific component
+     * @param {string} componentId - Component ID to re-render
+     */
+    rerenderComponent(componentId) {
+        const component = this.currentPage?.getComponentById(componentId);
+        if (!component) return;
+
+        const element = document.querySelector(`[data-component-id="${componentId}"]`);
+        if (!element) return;
+
+        // Re-render based on component type
+        switch (component.type) {
+            case 'TextComponent':
+                this.rerenderTextComponent(element, component);
+                break;
+            case 'AccordionComponent':
+                this.rerenderAccordionComponent(element, component);
+                break;
+            case 'CardComponent':
+                this.rerenderCardComponent(element, component);
+                break;
+            case 'BannerComponent':
+                this.rerenderBannerComponent(element, component);
+                break;
+            case 'LinkGroupComponent':
+                this.rerenderLinkGroupComponent(element, component);
+                break;
+        }
+    }
+
+    /**
+     * Update editing panel with component data
+     * @param {Object} component - Component data
+     */
+    updateEditingPanel(component) {
+        // This would integrate with the EditingPanel component
+        // For now, we'll just log the selection
+        console.log('Selected component:', component);
+    }
+
+    /**
+     * Clear editing panel
+     */
+    clearEditingPanel() {
+        // This would clear the EditingPanel component
+        console.log('Component deselected');
+    }
+
     addElement(event) {
         const canvas = document.getElementById('canvas');
         const rect = canvas.getBoundingClientRect();
@@ -173,6 +454,12 @@ class TemplatePageEditor {
                     // Real-time content update for better UX
                     this.updateTextComponentContent(textData.id, textEditor.innerHTML);
                 });
+
+                // Add click handler for component selection
+                textEditor.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setSelectedComponent(textData.id);
+                });
                 
                 element.appendChild(textEditor);
                 element.style.width = '200px';
@@ -191,12 +478,20 @@ class TemplatePageEditor {
                 const accordionElement = document.createElement('div');
                 accordionElement.className = 'accordion-component';
                 accordionElement.setAttribute('data-accordion-data', JSON.stringify(accordionData));
+                accordionElement.setAttribute('data-component-id', accordionData.id);
+                accordionElement.setAttribute('data-component-type', 'AccordionComponent');
                 accordionElement.style.width = '400px';
                 accordionElement.style.minHeight = '200px';
                 accordionElement.style.border = '1px solid #e2e8f0';
                 accordionElement.style.borderRadius = '8px';
                 accordionElement.style.backgroundColor = 'white';
                 accordionElement.style.padding = '10px';
+
+                // Add click handler for component selection
+                accordionElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setSelectedComponent(accordionData.id);
+                });
                 
                 // Create accordion items
                 accordionData.data.items.forEach((item, index) => {
@@ -836,7 +1131,10 @@ class TemplatePageEditor {
      */
     serializeCanvasToPage() {
         const canvas = document.getElementById('canvas');
-        const page = new Page({
+        
+        // Use PageStateManager if available, otherwise fallback to Page
+        const PageClass = window.PageStateManager || Page;
+        const page = new PageClass({
             templateId: 'default-template'
         });
 
@@ -1059,8 +1357,8 @@ class TemplatePageEditor {
                 <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
                 ${sourceFilesInfo}
                 <div class="template-actions">
-                    <button class="btn btn-primary" onclick="app.loadTemplate(${template.id})">Load</button>
-                    <button class="btn" onclick="app.deleteTemplate(${template.id})">Delete</button>
+                    <button class="btn btn-primary" data-action="load-template" data-template-id="${template.id}">Load</button>
+                    <button class="btn" data-action="delete-template" data-template-id="${template.id}">Delete</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -1091,8 +1389,16 @@ class TemplatePageEditor {
      */
     loadPageFromData(pageData) {
         try {
-            const page = Page.fromJSON(pageData);
-            this.currentPage = page;
+            // Use PageStateManager if available, otherwise fallback to Page
+            if (window.PageStateManager) {
+                const page = PageStateManager.fromJSON(pageData);
+                this.currentPage = page;
+                this.stateManager = page;
+                this.setupStateEventListeners();
+            } else {
+                const page = Page.fromJSON(pageData);
+                this.currentPage = page;
+            }
             
             const canvas = document.getElementById('canvas');
             const orderedComponents = page.getOrderedComponents();
@@ -1182,12 +1488,20 @@ class TemplatePageEditor {
                 const accordionElement = document.createElement('div');
                 accordionElement.className = 'accordion-component';
                 accordionElement.setAttribute('data-accordion-data', JSON.stringify(accordionData));
+                accordionElement.setAttribute('data-component-id', accordionData.id);
+                accordionElement.setAttribute('data-component-type', 'AccordionComponent');
                 accordionElement.style.width = '400px';
                 accordionElement.style.minHeight = '200px';
                 accordionElement.style.border = '1px solid #e2e8f0';
                 accordionElement.style.borderRadius = '8px';
                 accordionElement.style.backgroundColor = 'white';
                 accordionElement.style.padding = '10px';
+
+                // Add click handler for component selection
+                accordionElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setSelectedComponent(accordionData.id);
+                });
                 
                 // Create accordion items
                 accordionData.data.items.forEach((item, index) => {
@@ -1350,7 +1664,12 @@ class TemplatePageEditor {
     updateTextComponentContent(componentId, content) {
         if (this.currentPage) {
             try {
-                this.currentPage.updateTextComponentContent(componentId, content);
+                // Use state manager if available, otherwise fallback to direct update
+                if (this.stateManager) {
+                    this.stateManager.updateTextComponentContentWithNotification(componentId, content);
+                } else {
+                    this.currentPage.updateTextComponentContent(componentId, content);
+                }
             } catch (error) {
                 console.warn('Failed to update text component:', error);
             }
@@ -1945,4 +2264,37 @@ class TemplatePageEditor {
         }, type === 'error' ? 5000 : 3000);
     }
 }
+
+// Wait for DOM to be fully loaded before initializing
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Initializing app...');
+    
+    // Check if TemplatePageEditor class exists
+    if (typeof TemplatePageEditor === 'undefined') {
+        console.error('TemplatePageEditor class not found!');
+        return;
+    }
+    
+    // Initialize the application
+    const app = new TemplatePageEditor();
+    console.log('App initialized:', app);
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('templatePageEditor_theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            themeSelect.value = savedTheme;
+        }
+    }
+    
+    // Debug: Check if toolbar buttons exist
+    const toolbarButtons = document.querySelectorAll('.toolbar-btn[data-tool]');
+    console.log('Found toolbar buttons:', toolbarButtons.length);
+    
+    // Debug: Check if canvas exists
+    const canvas = document.getElementById('canvas');
+    console.log('Canvas element:', canvas);
+});
 
