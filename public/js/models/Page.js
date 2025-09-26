@@ -767,6 +767,179 @@ class Page {
     }
 
     /**
+     * Get all BannerComponents on the page
+     * @returns {Array} Array of BannerComponent instances
+     */
+    getBannerComponents() {
+        return this.components
+            .filter(c => c.type === 'BannerComponent')
+            .map(c => new BannerComponent(c));
+    }
+
+    /**
+     * Get BannerComponent by ID
+     * @param {string} componentId - Component ID
+     * @returns {BannerComponent|null} BannerComponent instance or null
+     */
+    getBannerComponentById(componentId) {
+        const component = this.getComponentById(componentId);
+        if (component && component.type === 'BannerComponent') {
+            return new BannerComponent(component);
+        }
+        return null;
+    }
+
+    /**
+     * Create a new BannerComponent and add it to the page
+     * @param {Object} options - BannerComponent options
+     * @param {string} options.headlineText - Banner headline text (optional)
+     * @param {string} options.backgroundImageUrl - Background image URL (optional)
+     * @param {string} options.backgroundImageAltText - Background image alt text (optional)
+     * @param {Object} options.callToAction - Call-to-action object (optional)
+     * @param {string} options.style - Component style (optional)
+     * @param {number} options.order - Component order (optional)
+     * @returns {BannerComponent} Created BannerComponent instance
+     */
+    createBannerComponent(options = {}) {
+        const bannerComponent = new BannerComponent({
+            data: {
+                headlineText: options.headlineText || 'Banner Headline',
+                backgroundImageUrl: options.backgroundImageUrl || '',
+                backgroundImageAltText: options.backgroundImageAltText || '',
+                callToAction: {
+                    buttonText: options.callToAction?.buttonText || 'Learn More',
+                    linkUrl: options.callToAction?.linkUrl || '',
+                    linkTarget: options.callToAction?.linkTarget || '_self'
+                },
+                style: options.style || 'default'
+            },
+            order: options.order || this.getNextOrder()
+        });
+
+        this.addComponent(bannerComponent.toJSON());
+        return bannerComponent;
+    }
+
+    /**
+     * Update BannerComponent data
+     * @param {string} componentId - Component ID
+     * @param {Object} data - New data
+     * @returns {boolean} Success status
+     */
+    updateBannerComponentData(componentId, data) {
+        const bannerComponent = this.getBannerComponentById(componentId);
+        if (!bannerComponent) {
+            throw new Error(`BannerComponent with ID '${componentId}' not found`);
+        }
+
+        bannerComponent.updateData(data);
+        this.updateComponent(componentId, bannerComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update BannerComponent headline
+     * @param {string} componentId - Component ID
+     * @param {string} headlineText - New headline text
+     * @returns {boolean} Success status
+     */
+    updateBannerComponentHeadline(componentId, headlineText) {
+        return this.updateBannerComponentData(componentId, { headlineText });
+    }
+
+    /**
+     * Update BannerComponent background image
+     * @param {string} componentId - Component ID
+     * @param {string} backgroundImageUrl - New background image URL
+     * @param {string} backgroundImageAltText - New background image alt text
+     * @returns {boolean} Success status
+     */
+    updateBannerComponentBackgroundImage(componentId, backgroundImageUrl, backgroundImageAltText = '') {
+        return this.updateBannerComponentData(componentId, { backgroundImageUrl, backgroundImageAltText });
+    }
+
+    /**
+     * Update BannerComponent call-to-action
+     * @param {string} componentId - Component ID
+     * @param {Object} callToAction - New call-to-action data
+     * @returns {boolean} Success status
+     */
+    updateBannerComponentCallToAction(componentId, callToAction) {
+        return this.updateBannerComponentData(componentId, { callToAction });
+    }
+
+    /**
+     * Get banner content statistics
+     * @returns {Object} Banner content statistics
+     */
+    getBannerContentStats() {
+        const bannerComponents = this.getBannerComponents();
+        const stats = {
+            totalBannerComponents: bannerComponents.length,
+            bannersWithBackgroundImages: 0,
+            bannersWithCallToActions: 0,
+            totalHeadlineCharacters: 0,
+            averageHeadlineLength: 0
+        };
+
+        bannerComponents.forEach(bc => {
+            const componentStats = bc.getContentStats();
+            stats.totalHeadlineCharacters += componentStats.headlineLength;
+            
+            if (componentStats.hasBackgroundImage) {
+                stats.bannersWithBackgroundImages++;
+            }
+            
+            if (componentStats.hasCallToAction) {
+                stats.bannersWithCallToActions++;
+            }
+        });
+
+        stats.averageHeadlineLength = bannerComponents.length > 0 ? 
+            Math.round(stats.totalHeadlineCharacters / bannerComponents.length) : 0;
+
+        return stats;
+    }
+
+    /**
+     * Search banner content
+     * @param {string} searchTerm - Search term
+     * @returns {Array} Array of matching banner components with search context
+     */
+    searchBannerContent(searchTerm) {
+        const matches = [];
+        const bannerComponents = this.getBannerComponents();
+
+        bannerComponents.forEach(bannerComponent => {
+            const headline = bannerComponent.getHeadlineText().toLowerCase();
+            const buttonText = bannerComponent.getButtonText().toLowerCase();
+            const searchLower = searchTerm.toLowerCase();
+
+            if (headline.includes(searchLower)) {
+                matches.push({
+                    componentId: bannerComponent.id,
+                    componentType: 'BannerComponent',
+                    field: 'headlineText',
+                    content: bannerComponent.getHeadlineText(),
+                    match: searchTerm
+                });
+            }
+
+            if (buttonText.includes(searchLower)) {
+                matches.push({
+                    componentId: bannerComponent.id,
+                    componentType: 'BannerComponent',
+                    field: 'callToAction.buttonText',
+                    content: bannerComponent.getButtonText(),
+                    match: searchTerm
+                });
+            }
+        });
+
+        return matches;
+    }
+
+    /**
      * Convert to JSON object
      * @returns {Object} JSON representation
      */

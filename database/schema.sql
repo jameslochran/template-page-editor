@@ -244,6 +244,39 @@ CHECK (
     )
 );
 
+-- Validate BannerComponent data structure
+ALTER TABLE Page 
+ADD CONSTRAINT check_banner_component_structure 
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(components)
+        WHERE value->>'type' = 'BannerComponent'
+        AND (
+            NOT (value->'data' ? 'headlineText') OR
+            NOT (value->'data' ? 'backgroundImageUrl') OR
+            NOT (value->'data' ? 'backgroundImageAltText') OR
+            NOT (value->'data' ? 'callToAction') OR
+            jsonb_typeof(value->'data'->'headlineText') != 'string' OR
+            jsonb_typeof(value->'data'->'backgroundImageUrl') != 'string' OR
+            jsonb_typeof(value->'data'->'backgroundImageAltText') != 'string' OR
+            jsonb_typeof(value->'data'->'callToAction') != 'object' OR
+            length(value->'data'->>'headlineText') > 500 OR
+            length(value->'data'->>'backgroundImageUrl') > 2048 OR
+            length(value->'data'->>'backgroundImageAltText') > 255 OR
+            NOT (value->'data'->'callToAction' ? 'buttonText') OR
+            NOT (value->'data'->'callToAction' ? 'linkUrl') OR
+            NOT (value->'data'->'callToAction' ? 'linkTarget') OR
+            jsonb_typeof(value->'data'->'callToAction'->'buttonText') != 'string' OR
+            jsonb_typeof(value->'data'->'callToAction'->'linkUrl') != 'string' OR
+            jsonb_typeof(value->'data'->'callToAction'->'linkTarget') != 'string' OR
+            length(value->'data'->'callToAction'->>'buttonText') > 255 OR
+            length(value->'data'->'callToAction'->>'linkUrl') > 2048 OR
+            value->'data'->'callToAction'->>'linkTarget' NOT IN ('_self', '_blank')
+        )
+    )
+);
+
 -- =====================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
 -- =====================================================
@@ -361,12 +394,15 @@ INSERT INTO Page (template_id, components) VALUES
                 "id": "banner-001",
                 "type": "BannerComponent",
                 "data": {
-                    "title": "Welcome to Our Platform",
-                    "subtitle": "Build amazing things with our tools",
-                    "buttonText": "Get Started",
-                    "backgroundImage": "https://example.com/hero-bg.jpg",
-                    "height": "600px",
-                    "alignment": "center"
+                    "headlineText": "Welcome to Our Platform",
+                    "backgroundImageUrl": "https://example.com/hero-bg.jpg",
+                    "backgroundImageAltText": "Hero banner background image",
+                    "callToAction": {
+                        "buttonText": "Get Started",
+                        "linkUrl": "https://example.com/get-started",
+                        "linkTarget": "_self"
+                    },
+                    "style": "default"
                 },
                 "order": 1
             },

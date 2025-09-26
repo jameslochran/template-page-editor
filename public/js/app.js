@@ -2,6 +2,7 @@
 // Work Order #8: TextComponent Data Model Structure Integration
 // Work Order #13: Accordion Component Data Model Structure Integration
 // Work Order #18: CardComponent Data Model Structure and Validation
+// Work Order #23: Banner Component Data Model Structure
 
 class TemplatePageEditor {
     constructor() {
@@ -417,6 +418,204 @@ class TemplatePageEditor {
                 
                 // Store component data
                 element.setAttribute('data-component', JSON.stringify(cardData));
+                break;
+                
+            case 'banner':
+                // Create BannerComponent using structured data model
+                const bannerComponent = BannerComponent.createDefault();
+                const bannerData = bannerComponent.toJSON();
+                
+                // Create banner HTML structure
+                const bannerElement = document.createElement('div');
+                bannerElement.className = 'banner-component';
+                bannerElement.setAttribute('data-banner-data', JSON.stringify(bannerData));
+                bannerElement.style.width = '100%';
+                bannerElement.style.minHeight = '400px';
+                bannerElement.style.border = '1px solid #e2e8f0';
+                bannerElement.style.borderRadius = '8px';
+                bannerElement.style.overflow = 'hidden';
+                bannerElement.style.position = 'relative';
+                bannerElement.style.backgroundColor = '#f8fafc';
+                
+                // Background image container
+                const backgroundContainer = document.createElement('div');
+                backgroundContainer.className = 'banner-background-container';
+                backgroundContainer.style.position = 'absolute';
+                backgroundContainer.style.top = '0';
+                backgroundContainer.style.left = '0';
+                backgroundContainer.style.width = '100%';
+                backgroundContainer.style.height = '100%';
+                backgroundContainer.style.zIndex = '1';
+                
+                // Background image URL input
+                const backgroundUrlInput = document.createElement('input');
+                backgroundUrlInput.type = 'url';
+                backgroundUrlInput.placeholder = 'Background image URL...';
+                backgroundUrlInput.value = bannerData.data.backgroundImageUrl;
+                backgroundUrlInput.style.width = '100%';
+                backgroundUrlInput.style.height = '100%';
+                backgroundUrlInput.style.border = 'none';
+                backgroundUrlInput.style.outline = 'none';
+                backgroundUrlInput.style.padding = '10px';
+                backgroundUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                backgroundUrlInput.style.fontSize = '14px';
+                backgroundUrlInput.addEventListener('blur', () => {
+                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
+                });
+                
+                // Background image alt text input
+                const backgroundAltInput = document.createElement('input');
+                backgroundAltInput.type = 'text';
+                backgroundAltInput.placeholder = 'Alt text for background image...';
+                backgroundAltInput.value = bannerData.data.backgroundImageAltText;
+                backgroundAltInput.style.position = 'absolute';
+                backgroundAltInput.style.bottom = '10px';
+                backgroundAltInput.style.left = '10px';
+                backgroundAltInput.style.right = '10px';
+                backgroundAltInput.style.padding = '5px';
+                backgroundAltInput.style.border = 'none';
+                backgroundAltInput.style.outline = 'none';
+                backgroundAltInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                backgroundAltInput.style.borderRadius = '4px';
+                backgroundAltInput.style.fontSize = '12px';
+                backgroundAltInput.addEventListener('blur', () => {
+                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
+                });
+                
+                backgroundContainer.appendChild(backgroundUrlInput);
+                backgroundContainer.appendChild(backgroundAltInput);
+                
+                // Content overlay
+                const contentOverlay = document.createElement('div');
+                contentOverlay.className = 'banner-content-overlay';
+                contentOverlay.style.position = 'relative';
+                contentOverlay.style.zIndex = '2';
+                contentOverlay.style.padding = '60px 40px';
+                contentOverlay.style.display = 'flex';
+                contentOverlay.style.flexDirection = 'column';
+                contentOverlay.style.alignItems = 'center';
+                contentOverlay.style.justifyContent = 'center';
+                contentOverlay.style.minHeight = '400px';
+                contentOverlay.style.textAlign = 'center';
+                
+                // Headline input
+                const headlineInput = document.createElement('input');
+                headlineInput.type = 'text';
+                headlineInput.value = bannerData.data.headlineText;
+                headlineInput.style.width = '80%';
+                headlineInput.style.border = 'none';
+                headlineInput.style.outline = 'none';
+                headlineInput.style.fontSize = '32px';
+                headlineInput.style.fontWeight = '700';
+                headlineInput.style.marginBottom = '30px';
+                headlineInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                headlineInput.style.padding = '15px';
+                headlineInput.style.borderRadius = '8px';
+                headlineInput.style.textAlign = 'center';
+                headlineInput.style.maxLength = '500';
+                headlineInput.addEventListener('blur', () => {
+                    this.updateBannerHeadline(bannerData.id, headlineInput.value);
+                });
+                
+                // Call-to-action container
+                const ctaContainer = document.createElement('div');
+                ctaContainer.className = 'banner-cta-container';
+                ctaContainer.style.display = 'flex';
+                ctaContainer.style.flexDirection = 'column';
+                ctaContainer.style.alignItems = 'center';
+                ctaContainer.style.gap = '15px';
+                ctaContainer.style.width = '80%';
+                
+                // Button text input
+                const buttonTextInput = document.createElement('input');
+                buttonTextInput.type = 'text';
+                buttonTextInput.placeholder = 'Button text...';
+                buttonTextInput.value = bannerData.data.callToAction.buttonText;
+                buttonTextInput.style.width = '100%';
+                buttonTextInput.style.maxWidth = '300px';
+                buttonTextInput.style.padding = '12px';
+                buttonTextInput.style.border = '1px solid #e2e8f0';
+                buttonTextInput.style.borderRadius = '6px';
+                buttonTextInput.style.outline = 'none';
+                buttonTextInput.style.fontSize = '16px';
+                buttonTextInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                buttonTextInput.style.textAlign = 'center';
+                buttonTextInput.style.maxLength = '255';
+                buttonTextInput.addEventListener('blur', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                // Link URL input
+                const linkUrlInput = document.createElement('input');
+                linkUrlInput.type = 'url';
+                linkUrlInput.placeholder = 'Link URL...';
+                linkUrlInput.value = bannerData.data.callToAction.linkUrl;
+                linkUrlInput.style.width = '100%';
+                linkUrlInput.style.maxWidth = '300px';
+                linkUrlInput.style.padding = '12px';
+                linkUrlInput.style.border = '1px solid #e2e8f0';
+                linkUrlInput.style.borderRadius = '6px';
+                linkUrlInput.style.outline = 'none';
+                linkUrlInput.style.fontSize = '14px';
+                linkUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                linkUrlInput.style.textAlign = 'center';
+                linkUrlInput.addEventListener('blur', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                // Link target select
+                const linkTargetSelect = document.createElement('select');
+                linkTargetSelect.style.width = '100%';
+                linkTargetSelect.style.maxWidth = '300px';
+                linkTargetSelect.style.padding = '12px';
+                linkTargetSelect.style.border = '1px solid #e2e8f0';
+                linkTargetSelect.style.borderRadius = '6px';
+                linkTargetSelect.style.outline = 'none';
+                linkTargetSelect.style.fontSize = '14px';
+                linkTargetSelect.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                linkTargetSelect.value = bannerData.data.callToAction.linkTarget;
+                linkTargetSelect.addEventListener('change', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                const selfOption = document.createElement('option');
+                selfOption.value = '_self';
+                selfOption.textContent = 'Same window';
+                const blankOption = document.createElement('option');
+                blankOption.value = '_blank';
+                blankOption.textContent = 'New window';
+                
+                linkTargetSelect.appendChild(selfOption);
+                linkTargetSelect.appendChild(blankOption);
+                
+                ctaContainer.appendChild(buttonTextInput);
+                ctaContainer.appendChild(linkUrlInput);
+                ctaContainer.appendChild(linkTargetSelect);
+                
+                contentOverlay.appendChild(headlineInput);
+                contentOverlay.appendChild(ctaContainer);
+                
+                bannerElement.appendChild(backgroundContainer);
+                bannerElement.appendChild(contentOverlay);
+                
+                element.appendChild(bannerElement);
+                element.style.width = '100%';
+                element.style.minHeight = '400px';
+                
+                // Store component data
+                element.setAttribute('data-component', JSON.stringify(bannerData));
                 break;
                 
             case 'image':
@@ -1004,6 +1203,199 @@ class TemplatePageEditor {
                 element.appendChild(cardElement);
                 break;
                 
+            case 'BannerComponent':
+                // Create BannerComponent from structured data
+                const bannerComponent = new BannerComponent(component);
+                const bannerData = bannerComponent.toJSON();
+                
+                // Create banner HTML structure
+                const bannerElement = document.createElement('div');
+                bannerElement.className = 'banner-component';
+                bannerElement.setAttribute('data-banner-data', JSON.stringify(bannerData));
+                bannerElement.style.width = '100%';
+                bannerElement.style.minHeight = '400px';
+                bannerElement.style.border = '1px solid #e2e8f0';
+                bannerElement.style.borderRadius = '8px';
+                bannerElement.style.overflow = 'hidden';
+                bannerElement.style.position = 'relative';
+                bannerElement.style.backgroundColor = '#f8fafc';
+                
+                // Background image container
+                const backgroundContainer = document.createElement('div');
+                backgroundContainer.className = 'banner-background-container';
+                backgroundContainer.style.position = 'absolute';
+                backgroundContainer.style.top = '0';
+                backgroundContainer.style.left = '0';
+                backgroundContainer.style.width = '100%';
+                backgroundContainer.style.height = '100%';
+                backgroundContainer.style.zIndex = '1';
+                
+                // Background image URL input
+                const backgroundUrlInput = document.createElement('input');
+                backgroundUrlInput.type = 'url';
+                backgroundUrlInput.placeholder = 'Background image URL...';
+                backgroundUrlInput.value = bannerData.data.backgroundImageUrl;
+                backgroundUrlInput.style.width = '100%';
+                backgroundUrlInput.style.height = '100%';
+                backgroundUrlInput.style.border = 'none';
+                backgroundUrlInput.style.outline = 'none';
+                backgroundUrlInput.style.padding = '10px';
+                backgroundUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                backgroundUrlInput.style.fontSize = '14px';
+                backgroundUrlInput.addEventListener('blur', () => {
+                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
+                });
+                
+                // Background image alt text input
+                const backgroundAltInput = document.createElement('input');
+                backgroundAltInput.type = 'text';
+                backgroundAltInput.placeholder = 'Alt text for background image...';
+                backgroundAltInput.value = bannerData.data.backgroundImageAltText;
+                backgroundAltInput.style.position = 'absolute';
+                backgroundAltInput.style.bottom = '10px';
+                backgroundAltInput.style.left = '10px';
+                backgroundAltInput.style.right = '10px';
+                backgroundAltInput.style.padding = '5px';
+                backgroundAltInput.style.border = 'none';
+                backgroundAltInput.style.outline = 'none';
+                backgroundAltInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                backgroundAltInput.style.borderRadius = '4px';
+                backgroundAltInput.style.fontSize = '12px';
+                backgroundAltInput.addEventListener('blur', () => {
+                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
+                });
+                
+                backgroundContainer.appendChild(backgroundUrlInput);
+                backgroundContainer.appendChild(backgroundAltInput);
+                
+                // Content overlay
+                const contentOverlay = document.createElement('div');
+                contentOverlay.className = 'banner-content-overlay';
+                contentOverlay.style.position = 'relative';
+                contentOverlay.style.zIndex = '2';
+                contentOverlay.style.padding = '60px 40px';
+                contentOverlay.style.display = 'flex';
+                contentOverlay.style.flexDirection = 'column';
+                contentOverlay.style.alignItems = 'center';
+                contentOverlay.style.justifyContent = 'center';
+                contentOverlay.style.minHeight = '400px';
+                contentOverlay.style.textAlign = 'center';
+                
+                // Headline input
+                const headlineInput = document.createElement('input');
+                headlineInput.type = 'text';
+                headlineInput.value = bannerData.data.headlineText;
+                headlineInput.style.width = '80%';
+                headlineInput.style.border = 'none';
+                headlineInput.style.outline = 'none';
+                headlineInput.style.fontSize = '32px';
+                headlineInput.style.fontWeight = '700';
+                headlineInput.style.marginBottom = '30px';
+                headlineInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                headlineInput.style.padding = '15px';
+                headlineInput.style.borderRadius = '8px';
+                headlineInput.style.textAlign = 'center';
+                headlineInput.style.maxLength = '500';
+                headlineInput.addEventListener('blur', () => {
+                    this.updateBannerHeadline(bannerData.id, headlineInput.value);
+                });
+                
+                // Call-to-action container
+                const ctaContainer = document.createElement('div');
+                ctaContainer.className = 'banner-cta-container';
+                ctaContainer.style.display = 'flex';
+                ctaContainer.style.flexDirection = 'column';
+                ctaContainer.style.alignItems = 'center';
+                ctaContainer.style.gap = '15px';
+                ctaContainer.style.width = '80%';
+                
+                // Button text input
+                const buttonTextInput = document.createElement('input');
+                buttonTextInput.type = 'text';
+                buttonTextInput.placeholder = 'Button text...';
+                buttonTextInput.value = bannerData.data.callToAction.buttonText;
+                buttonTextInput.style.width = '100%';
+                buttonTextInput.style.maxWidth = '300px';
+                buttonTextInput.style.padding = '12px';
+                buttonTextInput.style.border = '1px solid #e2e8f0';
+                buttonTextInput.style.borderRadius = '6px';
+                buttonTextInput.style.outline = 'none';
+                buttonTextInput.style.fontSize = '16px';
+                buttonTextInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                buttonTextInput.style.textAlign = 'center';
+                buttonTextInput.style.maxLength = '255';
+                buttonTextInput.addEventListener('blur', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                // Link URL input
+                const linkUrlInput = document.createElement('input');
+                linkUrlInput.type = 'url';
+                linkUrlInput.placeholder = 'Link URL...';
+                linkUrlInput.value = bannerData.data.callToAction.linkUrl;
+                linkUrlInput.style.width = '100%';
+                linkUrlInput.style.maxWidth = '300px';
+                linkUrlInput.style.padding = '12px';
+                linkUrlInput.style.border = '1px solid #e2e8f0';
+                linkUrlInput.style.borderRadius = '6px';
+                linkUrlInput.style.outline = 'none';
+                linkUrlInput.style.fontSize = '14px';
+                linkUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                linkUrlInput.style.textAlign = 'center';
+                linkUrlInput.addEventListener('blur', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                // Link target select
+                const linkTargetSelect = document.createElement('select');
+                linkTargetSelect.style.width = '100%';
+                linkTargetSelect.style.maxWidth = '300px';
+                linkTargetSelect.style.padding = '12px';
+                linkTargetSelect.style.border = '1px solid #e2e8f0';
+                linkTargetSelect.style.borderRadius = '6px';
+                linkTargetSelect.style.outline = 'none';
+                linkTargetSelect.style.fontSize = '14px';
+                linkTargetSelect.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                linkTargetSelect.value = bannerData.data.callToAction.linkTarget;
+                linkTargetSelect.addEventListener('change', () => {
+                    this.updateBannerCallToAction(bannerData.id, {
+                        buttonText: buttonTextInput.value,
+                        linkUrl: linkUrlInput.value,
+                        linkTarget: linkTargetSelect.value
+                    });
+                });
+                
+                const selfOption = document.createElement('option');
+                selfOption.value = '_self';
+                selfOption.textContent = 'Same window';
+                const blankOption = document.createElement('option');
+                blankOption.value = '_blank';
+                blankOption.textContent = 'New window';
+                
+                linkTargetSelect.appendChild(selfOption);
+                linkTargetSelect.appendChild(blankOption);
+                
+                ctaContainer.appendChild(buttonTextInput);
+                ctaContainer.appendChild(linkUrlInput);
+                ctaContainer.appendChild(linkTargetSelect);
+                
+                contentOverlay.appendChild(headlineInput);
+                contentOverlay.appendChild(ctaContainer);
+                
+                bannerElement.appendChild(backgroundContainer);
+                bannerElement.appendChild(contentOverlay);
+                
+                element.appendChild(bannerElement);
+                break;
+                
             default:
                 element.innerHTML = `<div class="unknown-component">Unknown Component: ${component.type}</div>`;
                 element.style.width = '200px';
@@ -1397,6 +1789,40 @@ class TemplatePageEditor {
             } catch (error) {
                 console.error('Failed to update card link:', error);
                 this.showNotification('Failed to update link: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Banner Component Update Functions
+    updateBannerHeadline(componentId, headlineText) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateBannerComponentHeadline(componentId, headlineText);
+            } catch (error) {
+                console.error('Failed to update banner headline:', error);
+                this.showNotification('Failed to update headline: ' + error.message, 'error');
+            }
+        }
+    }
+
+    updateBannerBackgroundImage(componentId, backgroundImageUrl, backgroundImageAltText) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateBannerComponentBackgroundImage(componentId, backgroundImageUrl, backgroundImageAltText);
+            } catch (error) {
+                console.error('Failed to update banner background image:', error);
+                this.showNotification('Failed to update background image: ' + error.message, 'error');
+            }
+        }
+    }
+
+    updateBannerCallToAction(componentId, callToAction) {
+        if (this.currentPage) {
+            try {
+                this.currentPage.updateBannerComponentCallToAction(componentId, callToAction);
+            } catch (error) {
+                console.error('Failed to update banner call-to-action:', error);
+                this.showNotification('Failed to update call-to-action: ' + error.message, 'error');
             }
         }
     }
