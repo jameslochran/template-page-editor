@@ -545,65 +545,65 @@ class TemplatePageEditor {
                 buttonTextInput.addEventListener('blur', () => {
                     this.updateBannerCallToAction(bannerData.id, {
                         buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
+                        linkUrl: bannerLinkUrlInput.value,
+                        linkTarget: bannerLinkTargetSelect.value
                     });
                 });
                 
                 // Link URL input
-                const linkUrlInput = document.createElement('input');
-                linkUrlInput.type = 'url';
-                linkUrlInput.placeholder = 'Link URL...';
-                linkUrlInput.value = bannerData.data.callToAction.linkUrl;
-                linkUrlInput.style.width = '100%';
-                linkUrlInput.style.maxWidth = '300px';
-                linkUrlInput.style.padding = '12px';
-                linkUrlInput.style.border = '1px solid #e2e8f0';
-                linkUrlInput.style.borderRadius = '6px';
-                linkUrlInput.style.outline = 'none';
-                linkUrlInput.style.fontSize = '14px';
-                linkUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                linkUrlInput.style.textAlign = 'center';
-                linkUrlInput.addEventListener('blur', () => {
+                const bannerLinkUrlInput = document.createElement('input');
+                bannerLinkUrlInput.type = 'url';
+                bannerLinkUrlInput.placeholder = 'Link URL...';
+                bannerLinkUrlInput.value = bannerData.data.callToAction.linkUrl;
+                bannerLinkUrlInput.style.width = '100%';
+                bannerLinkUrlInput.style.maxWidth = '300px';
+                bannerLinkUrlInput.style.padding = '12px';
+                bannerLinkUrlInput.style.border = '1px solid #e2e8f0';
+                bannerLinkUrlInput.style.borderRadius = '6px';
+                bannerLinkUrlInput.style.outline = 'none';
+                bannerLinkUrlInput.style.fontSize = '14px';
+                bannerLinkUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                bannerLinkUrlInput.style.textAlign = 'center';
+                bannerLinkUrlInput.addEventListener('blur', () => {
                     this.updateBannerCallToAction(bannerData.id, {
                         buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
+                        linkUrl: bannerLinkUrlInput.value,
+                        linkTarget: bannerLinkTargetSelect.value
                     });
                 });
                 
                 // Link target select
-                const linkTargetSelect = document.createElement('select');
-                linkTargetSelect.style.width = '100%';
-                linkTargetSelect.style.maxWidth = '300px';
-                linkTargetSelect.style.padding = '12px';
-                linkTargetSelect.style.border = '1px solid #e2e8f0';
-                linkTargetSelect.style.borderRadius = '6px';
-                linkTargetSelect.style.outline = 'none';
-                linkTargetSelect.style.fontSize = '14px';
-                linkTargetSelect.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                linkTargetSelect.value = bannerData.data.callToAction.linkTarget;
-                linkTargetSelect.addEventListener('change', () => {
+                const bannerLinkTargetSelect = document.createElement('select');
+                bannerLinkTargetSelect.style.width = '100%';
+                bannerLinkTargetSelect.style.maxWidth = '300px';
+                bannerLinkTargetSelect.style.padding = '12px';
+                bannerLinkTargetSelect.style.border = '1px solid #e2e8f0';
+                bannerLinkTargetSelect.style.borderRadius = '6px';
+                bannerLinkTargetSelect.style.outline = 'none';
+                bannerLinkTargetSelect.style.fontSize = '14px';
+                bannerLinkTargetSelect.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                bannerLinkTargetSelect.value = bannerData.data.callToAction.linkTarget;
+                bannerLinkTargetSelect.addEventListener('change', () => {
                     this.updateBannerCallToAction(bannerData.id, {
                         buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
+                        linkUrl: bannerLinkUrlInput.value,
+                        linkTarget: bannerLinkTargetSelect.value
                     });
                 });
                 
-                const selfOption = document.createElement('option');
-                selfOption.value = '_self';
-                selfOption.textContent = 'Same window';
-                const blankOption = document.createElement('option');
-                blankOption.value = '_blank';
-                blankOption.textContent = 'New window';
+                const bannerSelfOption = document.createElement('option');
+                bannerSelfOption.value = '_self';
+                bannerSelfOption.textContent = 'Same window';
+                const bannerBlankOption = document.createElement('option');
+                bannerBlankOption.value = '_blank';
+                bannerBlankOption.textContent = 'New window';
                 
-                linkTargetSelect.appendChild(selfOption);
-                linkTargetSelect.appendChild(blankOption);
+                bannerLinkTargetSelect.appendChild(bannerSelfOption);
+                bannerLinkTargetSelect.appendChild(bannerBlankOption);
                 
                 ctaContainer.appendChild(buttonTextInput);
-                ctaContainer.appendChild(linkUrlInput);
-                ctaContainer.appendChild(linkTargetSelect);
+                ctaContainer.appendChild(bannerLinkUrlInput);
+                ctaContainer.appendChild(bannerLinkTargetSelect);
                 
                 contentOverlay.appendChild(headlineInput);
                 contentOverlay.appendChild(ctaContainer);
@@ -1226,373 +1226,10 @@ class TemplatePageEditor {
                 break;
                 
             case 'CardComponent':
-                const cardComponent = new CardComponent(component);
-                const cardData = cardComponent.toJSON();
-                
-                // Create card HTML structure
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card-component';
-                cardElement.setAttribute('data-card-data', JSON.stringify(cardData));
-                cardElement.style.width = '300px';
-                cardElement.style.minHeight = '400px';
-                cardElement.style.border = '1px solid #e2e8f0';
-                cardElement.style.borderRadius = '8px';
-                cardElement.style.backgroundColor = 'white';
-                cardElement.style.overflow = 'hidden';
-                cardElement.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-                
-                // Create card image
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'card-image-container';
-                imageContainer.style.height = '200px';
-                imageContainer.style.backgroundColor = '#f8fafc';
-                imageContainer.style.display = 'flex';
-                imageContainer.style.alignItems = 'center';
-                imageContainer.style.justifyContent = 'center';
-                imageContainer.style.position = 'relative';
-                
-                const imageInput = document.createElement('input');
-                imageInput.type = 'url';
-                imageInput.placeholder = 'Enter image URL...';
-                imageInput.value = cardData.data.imageUrl;
-                imageInput.style.width = '100%';
-                imageInput.style.height = '100%';
-                imageInput.style.border = 'none';
-                imageInput.style.outline = 'none';
-                imageInput.style.padding = '10px';
-                imageInput.style.backgroundColor = 'transparent';
-                imageInput.addEventListener('blur', () => {
-                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
-                });
-                
-                const altInput = document.createElement('input');
-                altInput.type = 'text';
-                altInput.placeholder = 'Alt text...';
-                altInput.value = cardData.data.altText;
-                altInput.style.position = 'absolute';
-                altInput.style.bottom = '10px';
-                altInput.style.left = '10px';
-                altInput.style.right = '10px';
-                altInput.style.padding = '5px';
-                altInput.style.border = 'none';
-                altInput.style.outline = 'none';
-                altInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                altInput.style.borderRadius = '4px';
-                altInput.addEventListener('blur', () => {
-                    this.updateCardImage(cardData.id, imageInput.value, altInput.value);
-                });
-                
-                imageContainer.appendChild(imageInput);
-                imageContainer.appendChild(altInput);
-                
-                // Create card content
-                const contentContainer = document.createElement('div');
-                contentContainer.className = 'card-content-container';
-                contentContainer.style.padding = '16px';
-                
-                // Title input
-                const titleInput = document.createElement('input');
-                titleInput.type = 'text';
-                titleInput.value = cardData.data.title;
-                titleInput.style.width = '100%';
-                titleInput.style.border = 'none';
-                titleInput.style.outline = 'none';
-                titleInput.style.fontSize = '18px';
-                titleInput.style.fontWeight = '600';
-                titleInput.style.marginBottom = '12px';
-                titleInput.style.backgroundColor = 'transparent';
-                titleInput.addEventListener('blur', () => {
-                    this.updateCardTitle(cardData.id, titleInput.value);
-                });
-                
-                // Description editor
-                const descriptionEditor = document.createElement('div');
-                descriptionEditor.className = 'card-description-editor';
-                descriptionEditor.contentEditable = true;
-                descriptionEditor.innerHTML = cardData.data.description.data;
-                descriptionEditor.style.minHeight = '60px';
-                descriptionEditor.style.border = '1px solid transparent';
-                descriptionEditor.style.borderRadius = '4px';
-                descriptionEditor.style.padding = '8px';
-                descriptionEditor.style.outline = 'none';
-                descriptionEditor.style.fontSize = '14px';
-                descriptionEditor.style.lineHeight = '1.5';
-                descriptionEditor.addEventListener('focus', () => {
-                    descriptionEditor.style.border = '1px solid #2563eb';
-                    descriptionEditor.style.backgroundColor = '#f8fafc';
-                });
-                descriptionEditor.addEventListener('blur', () => {
-                    descriptionEditor.style.border = '1px solid transparent';
-                    descriptionEditor.style.backgroundColor = 'transparent';
-                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
-                });
-                descriptionEditor.addEventListener('input', () => {
-                    this.updateCardDescription(cardData.id, descriptionEditor.innerHTML);
-                });
-                
-                // Link inputs
-                const linkContainer = document.createElement('div');
-                linkContainer.style.marginTop = '12px';
-                linkContainer.style.display = 'flex';
-                linkContainer.style.gap = '8px';
-                linkContainer.style.flexDirection = 'column';
-                
-                const linkUrlInput = document.createElement('input');
-                linkUrlInput.type = 'url';
-                linkUrlInput.placeholder = 'Link URL...';
-                linkUrlInput.value = cardData.data.linkUrl;
-                linkUrlInput.style.width = '100%';
-                linkUrlInput.style.padding = '6px';
-                linkUrlInput.style.border = '1px solid #e2e8f0';
-                linkUrlInput.style.borderRadius = '4px';
-                linkUrlInput.style.outline = 'none';
-                linkUrlInput.style.fontSize = '14px';
-                linkUrlInput.addEventListener('blur', () => {
-                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
-                });
-                
-                const linkTextInput = document.createElement('input');
-                linkTextInput.type = 'text';
-                linkTextInput.placeholder = 'Link text...';
-                linkTextInput.value = cardData.data.linkText;
-                linkTextInput.style.width = '100%';
-                linkTextInput.style.padding = '6px';
-                linkTextInput.style.border = '1px solid #e2e8f0';
-                linkTextInput.style.borderRadius = '4px';
-                linkTextInput.style.outline = 'none';
-                linkTextInput.style.fontSize = '14px';
-                linkTextInput.addEventListener('blur', () => {
-                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
-                });
-                
-                const linkTargetSelect = document.createElement('select');
-                linkTargetSelect.style.width = '100%';
-                linkTargetSelect.style.padding = '6px';
-                linkTargetSelect.style.border = '1px solid #e2e8f0';
-                linkTargetSelect.style.borderRadius = '4px';
-                linkTargetSelect.style.outline = 'none';
-                linkTargetSelect.style.fontSize = '14px';
-                linkTargetSelect.value = cardData.data.linkTarget;
-                linkTargetSelect.addEventListener('change', () => {
-                    this.updateCardLink(cardData.id, linkUrlInput.value, linkTextInput.value, linkTargetSelect.value);
-                });
-                
-                const selfOption = document.createElement('option');
-                selfOption.value = '_self';
-                selfOption.textContent = 'Same window';
-                const blankOption = document.createElement('option');
-                blankOption.value = '_blank';
-                blankOption.textContent = 'New window';
-                
-                linkTargetSelect.appendChild(selfOption);
-                linkTargetSelect.appendChild(blankOption);
-                
-                linkContainer.appendChild(linkUrlInput);
-                linkContainer.appendChild(linkTextInput);
-                linkContainer.appendChild(linkTargetSelect);
-                
-                contentContainer.appendChild(titleInput);
-                contentContainer.appendChild(descriptionEditor);
-                contentContainer.appendChild(linkContainer);
-                
-                cardElement.appendChild(imageContainer);
-                cardElement.appendChild(contentContainer);
-                
-                element.appendChild(cardElement);
+                // CardComponent case handled in createElement method
                 break;
                 
-            case 'BannerComponent':
-                // Create BannerComponent from structured data
-                const bannerComponent = new BannerComponent(component);
-                const bannerData = bannerComponent.toJSON();
                 
-                // Create banner HTML structure
-                const bannerElement = document.createElement('div');
-                bannerElement.className = 'banner-component';
-                bannerElement.setAttribute('data-banner-data', JSON.stringify(bannerData));
-                bannerElement.style.width = '100%';
-                bannerElement.style.minHeight = '400px';
-                bannerElement.style.border = '1px solid #e2e8f0';
-                bannerElement.style.borderRadius = '8px';
-                bannerElement.style.overflow = 'hidden';
-                bannerElement.style.position = 'relative';
-                bannerElement.style.backgroundColor = '#f8fafc';
-                
-                // Background image container
-                const backgroundContainer = document.createElement('div');
-                backgroundContainer.className = 'banner-background-container';
-                backgroundContainer.style.position = 'absolute';
-                backgroundContainer.style.top = '0';
-                backgroundContainer.style.left = '0';
-                backgroundContainer.style.width = '100%';
-                backgroundContainer.style.height = '100%';
-                backgroundContainer.style.zIndex = '1';
-                
-                // Background image URL input
-                const backgroundUrlInput = document.createElement('input');
-                backgroundUrlInput.type = 'url';
-                backgroundUrlInput.placeholder = 'Background image URL...';
-                backgroundUrlInput.value = bannerData.data.backgroundImageUrl;
-                backgroundUrlInput.style.width = '100%';
-                backgroundUrlInput.style.height = '100%';
-                backgroundUrlInput.style.border = 'none';
-                backgroundUrlInput.style.outline = 'none';
-                backgroundUrlInput.style.padding = '10px';
-                backgroundUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                backgroundUrlInput.style.fontSize = '14px';
-                backgroundUrlInput.addEventListener('blur', () => {
-                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
-                });
-                
-                // Background image alt text input
-                const backgroundAltInput = document.createElement('input');
-                backgroundAltInput.type = 'text';
-                backgroundAltInput.placeholder = 'Alt text for background image...';
-                backgroundAltInput.value = bannerData.data.backgroundImageAltText;
-                backgroundAltInput.style.position = 'absolute';
-                backgroundAltInput.style.bottom = '10px';
-                backgroundAltInput.style.left = '10px';
-                backgroundAltInput.style.right = '10px';
-                backgroundAltInput.style.padding = '5px';
-                backgroundAltInput.style.border = 'none';
-                backgroundAltInput.style.outline = 'none';
-                backgroundAltInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                backgroundAltInput.style.borderRadius = '4px';
-                backgroundAltInput.style.fontSize = '12px';
-                backgroundAltInput.addEventListener('blur', () => {
-                    this.updateBannerBackgroundImage(bannerData.id, backgroundUrlInput.value, backgroundAltInput.value);
-                });
-                
-                backgroundContainer.appendChild(backgroundUrlInput);
-                backgroundContainer.appendChild(backgroundAltInput);
-                
-                // Content overlay
-                const contentOverlay = document.createElement('div');
-                contentOverlay.className = 'banner-content-overlay';
-                contentOverlay.style.position = 'relative';
-                contentOverlay.style.zIndex = '2';
-                contentOverlay.style.padding = '60px 40px';
-                contentOverlay.style.display = 'flex';
-                contentOverlay.style.flexDirection = 'column';
-                contentOverlay.style.alignItems = 'center';
-                contentOverlay.style.justifyContent = 'center';
-                contentOverlay.style.minHeight = '400px';
-                contentOverlay.style.textAlign = 'center';
-                
-                // Headline input
-                const headlineInput = document.createElement('input');
-                headlineInput.type = 'text';
-                headlineInput.value = bannerData.data.headlineText;
-                headlineInput.style.width = '80%';
-                headlineInput.style.border = 'none';
-                headlineInput.style.outline = 'none';
-                headlineInput.style.fontSize = '32px';
-                headlineInput.style.fontWeight = '700';
-                headlineInput.style.marginBottom = '30px';
-                headlineInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                headlineInput.style.padding = '15px';
-                headlineInput.style.borderRadius = '8px';
-                headlineInput.style.textAlign = 'center';
-                headlineInput.style.maxLength = '500';
-                headlineInput.addEventListener('blur', () => {
-                    this.updateBannerHeadline(bannerData.id, headlineInput.value);
-                });
-                
-                // Call-to-action container
-                const ctaContainer = document.createElement('div');
-                ctaContainer.className = 'banner-cta-container';
-                ctaContainer.style.display = 'flex';
-                ctaContainer.style.flexDirection = 'column';
-                ctaContainer.style.alignItems = 'center';
-                ctaContainer.style.gap = '15px';
-                ctaContainer.style.width = '80%';
-                
-                // Button text input
-                const buttonTextInput = document.createElement('input');
-                buttonTextInput.type = 'text';
-                buttonTextInput.placeholder = 'Button text...';
-                buttonTextInput.value = bannerData.data.callToAction.buttonText;
-                buttonTextInput.style.width = '100%';
-                buttonTextInput.style.maxWidth = '300px';
-                buttonTextInput.style.padding = '12px';
-                buttonTextInput.style.border = '1px solid #e2e8f0';
-                buttonTextInput.style.borderRadius = '6px';
-                buttonTextInput.style.outline = 'none';
-                buttonTextInput.style.fontSize = '16px';
-                buttonTextInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                buttonTextInput.style.textAlign = 'center';
-                buttonTextInput.style.maxLength = '255';
-                buttonTextInput.addEventListener('blur', () => {
-                    this.updateBannerCallToAction(bannerData.id, {
-                        buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
-                    });
-                });
-                
-                // Link URL input
-                const linkUrlInput = document.createElement('input');
-                linkUrlInput.type = 'url';
-                linkUrlInput.placeholder = 'Link URL...';
-                linkUrlInput.value = bannerData.data.callToAction.linkUrl;
-                linkUrlInput.style.width = '100%';
-                linkUrlInput.style.maxWidth = '300px';
-                linkUrlInput.style.padding = '12px';
-                linkUrlInput.style.border = '1px solid #e2e8f0';
-                linkUrlInput.style.borderRadius = '6px';
-                linkUrlInput.style.outline = 'none';
-                linkUrlInput.style.fontSize = '14px';
-                linkUrlInput.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                linkUrlInput.style.textAlign = 'center';
-                linkUrlInput.addEventListener('blur', () => {
-                    this.updateBannerCallToAction(bannerData.id, {
-                        buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
-                    });
-                });
-                
-                // Link target select
-                const linkTargetSelect = document.createElement('select');
-                linkTargetSelect.style.width = '100%';
-                linkTargetSelect.style.maxWidth = '300px';
-                linkTargetSelect.style.padding = '12px';
-                linkTargetSelect.style.border = '1px solid #e2e8f0';
-                linkTargetSelect.style.borderRadius = '6px';
-                linkTargetSelect.style.outline = 'none';
-                linkTargetSelect.style.fontSize = '14px';
-                linkTargetSelect.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                linkTargetSelect.value = bannerData.data.callToAction.linkTarget;
-                linkTargetSelect.addEventListener('change', () => {
-                    this.updateBannerCallToAction(bannerData.id, {
-                        buttonText: buttonTextInput.value,
-                        linkUrl: linkUrlInput.value,
-                        linkTarget: linkTargetSelect.value
-                    });
-                });
-                
-                const selfOption = document.createElement('option');
-                selfOption.value = '_self';
-                selfOption.textContent = 'Same window';
-                const blankOption = document.createElement('option');
-                blankOption.value = '_blank';
-                blankOption.textContent = 'New window';
-                
-                linkTargetSelect.appendChild(selfOption);
-                linkTargetSelect.appendChild(blankOption);
-                
-                ctaContainer.appendChild(buttonTextInput);
-                ctaContainer.appendChild(linkUrlInput);
-                ctaContainer.appendChild(linkTargetSelect);
-                
-                contentOverlay.appendChild(headlineInput);
-                contentOverlay.appendChild(ctaContainer);
-                
-                bannerElement.appendChild(backgroundContainer);
-                bannerElement.appendChild(contentOverlay);
-                
-                element.appendChild(bannerElement);
-                break;
                 
             case 'LinkGroupComponent':
                 // Create LinkGroupComponent from structured data
