@@ -107,9 +107,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.quilljs.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https:", "data:"],
       connectSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -238,8 +238,16 @@ app.use('/api/pages', pageShareRoutes);
 app.use('/api', pageShareRoutes);
 
 // Import and register admin template upload routes
-const adminTemplatesRoutes = require('./src/api/adminTemplates');
-app.use('/api/admin/templates', adminTemplatesRoutes);
+const adminTemplateUploadRoutes = require('./src/api/adminTemplateUpload');
+app.use('/api/admin/templates/upload', adminTemplateUploadRoutes);
+
+// Import and register admin template CRUD routes
+const adminTemplateCrudRoutes = require('./src/api/adminTemplates');
+const adminCategoryRoutes = require('./src/api/adminCategoryRoutes');
+const imageUploadRoutes = require('./src/api/imageUpload');
+app.use('/api/admin/templates', adminTemplateCrudRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/images', imageUploadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

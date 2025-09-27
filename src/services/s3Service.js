@@ -32,7 +32,8 @@ const ALLOWED_FILE_TYPES = {
     'figma': ['application/zip', 'application/x-zip-compressed'],
     'png': ['image/png'],
     'jpg': ['image/jpeg'],
-    'jpeg': ['image/jpeg']
+    'jpeg': ['image/jpeg'],
+    'webp': ['image/webp']
 };
 
 // Maximum file sizes (in bytes)
@@ -40,7 +41,8 @@ const MAX_FILE_SIZES = {
     'figma': 50 * 1024 * 1024, // 50MB
     'png': 10 * 1024 * 1024,   // 10MB
     'jpg': 10 * 1024 * 1024,   // 10MB
-    'jpeg': 10 * 1024 * 1024   // 10MB
+    'jpeg': 10 * 1024 * 1024,  // 10MB
+    'webp': 10 * 1024 * 1024   // 10MB
 };
 
 /**

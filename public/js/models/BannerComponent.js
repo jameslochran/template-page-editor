@@ -489,6 +489,22 @@ class BannerComponent {
     }
 
     /**
+     * Remove background image and alt text
+     * @returns {boolean} Success status
+     */
+    removeBackgroundImage() {
+        try {
+            this.data.backgroundImageUrl = '';
+            this.data.backgroundImageAltText = '';
+            this.updatedAt = new Date().toISOString();
+            return true;
+        } catch (error) {
+            console.error('Error removing background image:', error);
+            return false;
+        }
+    }
+
+    /**
      * Get content statistics
      * @returns {Object} Content statistics
      */
