@@ -77,19 +77,23 @@
                     <i class="fas fa-link"></i>
                     Links
                 </button>
+                                <button class="toolbar-btn" data-action="test-page-editor">
+                                    <i class="fas fa-edit"></i>
+                                    Test PageEditor
+                                </button>
                             </div>
                             <div class="toolbar-group">
                                 <button class="toolbar-btn" data-action="preview">
                                     <i class="fas fa-eye"></i>
                                     Preview
                                 </button>
+                                <button class="toolbar-btn" data-action="version-history">
+                                    <i class="fas fa-history"></i>
+                                    Version History
+                                </button>
                                 <button class="toolbar-btn primary" data-action="save">
                                     <i class="fas fa-save"></i>
                                     Save
-                                </button>
-                                <button class="toolbar-btn" data-action="test-page-editor">
-                                    <i class="fas fa-edit"></i>
-                                    Test PageEditor
                                 </button>
                             </div>
                         </div>
@@ -101,6 +105,11 @@
                                     <p>Click on a tool to start building your page</p>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Version History Panel - Work Order 40 -->
+                        <div id="version-history-panel-container" class="version-history-panel-container" style="display: none;">
+                            <!-- Version History Panel will be rendered here -->
                         </div>
                     </div>
                 </section>
@@ -159,9 +168,8 @@
         <script src="js/models/Page.js?v=1.0"></script>
         <script src="js/PageEditor.js?v=1.0"></script>
         
-        <!-- EditingPanel Components - Work Order 12 -->
-        <script src="js/ComponentEditors.js?v=1.0"></script>
-        <script src="js/EditingPanel.js?v=1.0"></script>
+        <!-- Base Component Editor -->
+        <script src="js/BaseComponentEditor.js?v=1.0"></script>
         
         <!-- Component-Specific Editors - Work Order 16 -->
         <script src="js/utils/validation.js?v=1.0"></script>
@@ -169,11 +177,46 @@
         <script src="js/editors/ImageEditor.js?v=1.0"></script>
         <script src="js/editors/AccordionEditor.js?v=1.0"></script>
         
+        <!-- EditingPanel Components - Work Order 12 -->
+        <script src="js/ComponentEditors.js?v=1.0"></script>
+        <script src="js/EditingPanel.js?v=1.0"></script>
+        
+        <!-- AccordionEditor Component - Work Order 17 -->
+        <script src="js/AccordionEditor.js?v=1.0"></script>
+        
+        <!-- AccordionItemEditor Component - Work Order 21 -->
+        <script src="js/AccordionItemEditor.js?v=1.0"></script>
+        
+        <!-- CardEditor Component - Work Order 15 -->
+        <script src="js/CardEditor.js?v=1.0"></script>
+        
         <!-- ImageUploader Component - Work Order 19 -->
         <script src="js/ImageUploader.js?v=1.0"></script>
         
         <!-- BannerImageUploader Component - Work Order 26 -->
         <script src="js/BannerImageUploader.js?v=1.0"></script>
+        
+        <!-- BannerEditor Component - Work Order 22 -->
+        <script src="js/components/BannerEditor.js?v=1.0"></script>
+        
+        <!-- LinkEditor and LinkGroupEditor Components - Work Order 27 -->
+        <script src="js/editors/LinkEditor.js?v=1.0"></script>
+        <script src="js/editors/LinkGroupEditor.js?v=1.0"></script>
+        
+        <!-- Save Version Components - Work Order 29 -->
+        <script src="js/components/SaveButton.js?v=1.0"></script>
+        <script src="js/components/SaveVersionModal.js?v=1.0"></script>
+        
+        <!-- Version History Components - Work Order 40 -->
+        <script src="js/models/PageVersion.js?v=1.0"></script>
+        <script src="js/VersionHistoryManager.js?v=1.0"></script>
+        
+        <!-- Version Preview Modal - Work Order 45 -->
+        <script src="js/VersionPreviewModal.js?v=1.0"></script>
+        
+        <!-- Share Components - Work Order 30 -->
+        <script src="js/ShareButton.js?v=1.0"></script>
+        <script src="js/SharePageModal.js?v=1.0"></script>
     
     <!-- Main Application -->
     <script src="js/app.js?v=1.0"></script>

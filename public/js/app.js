@@ -16,6 +16,9 @@ class TemplatePageEditor {
         this.pageEditor = null; // PageEditor instance
         this.pageId = null; // Current page ID for saving
         this.hasUnsavedChanges = false; // Track unsaved changes
+        this.saveButton = null; // SaveButton instance
+        this.saveVersionModal = null; // SaveVersionModal instance
+        this.versionHistoryManager = null; // VersionHistoryManager instance
         this.init();
     }
 
@@ -25,6 +28,8 @@ class TemplatePageEditor {
         this.setupCanvas();
         this.setupStateManagement();
         this.setupUnsavedChangesWarning();
+        this.initializeSaveVersionComponents();
+        this.initializeVersionHistoryManager();
     }
 
     setupEventListeners() {
@@ -73,11 +78,17 @@ class TemplatePageEditor {
         document.addEventListener('click', (e) => {
             if (e.target.matches('[data-action="load-template"]')) {
                 const templateId = e.target.dataset.templateId;
-                this.loadTemplate(templateId);
+                const templateType = e.target.dataset.templateType || 'local';
+                this.loadTemplate(templateId, templateType);
             } else if (e.target.matches('[data-action="delete-template"]')) {
                 const templateId = e.target.dataset.templateId;
                 this.deleteTemplate(templateId);
             }
+        });
+
+        // Save version request event
+        document.addEventListener('saveVersionRequested', (e) => {
+            this.handleSaveVersionRequest();
         });
     }
 
@@ -189,6 +200,18 @@ class TemplatePageEditor {
         // Component update events
         this.stateManager.addEventListener('componentUpdated', (data) => {
             this.handleComponentUpdated(data);
+        });
+
+        // Listen for componentUpdated events from EditingPanel
+        document.addEventListener('componentUpdated', (event) => {
+            const { componentType, componentData } = event.detail;
+            if (this.activeComponent && this.activeComponent.id) {
+                this.handleComponentUpdated({
+                    componentId: this.activeComponent.id,
+                    componentType: componentType,
+                    componentData: componentData
+                });
+            }
         });
 
         this.stateManager.addEventListener('textComponentUpdated', (data) => {
@@ -509,7 +532,7 @@ class TemplatePageEditor {
                 textEditor.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.setActiveComponent(textData.id, 'TextComponent', textData.data);
-                    this.openEditingPanel('TextComponent', textData.data);
+                    this.openEditingPanel('TextComponent', textData);
                 });
                 
                 element.appendChild(textEditor);
@@ -542,7 +565,7 @@ class TemplatePageEditor {
                 accordionElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.setActiveComponent(accordionData.id, 'AccordionComponent', accordionData.data);
-                    this.openEditingPanel('AccordionComponent', accordionData.data);
+                    this.openEditingPanel('AccordionComponent', accordionData);
                 });
                 
                 // Create accordion items
@@ -787,6 +810,8 @@ class TemplatePageEditor {
                 const bannerElement = document.createElement('div');
                 bannerElement.className = 'banner-component';
                 bannerElement.setAttribute('data-banner-data', JSON.stringify(bannerData));
+                bannerElement.setAttribute('data-component-id', bannerData.id);
+                bannerElement.setAttribute('data-component-type', 'BannerComponent');
                 bannerElement.style.width = '100%';
                 bannerElement.style.minHeight = '400px';
                 bannerElement.style.border = '1px solid #e2e8f0';
@@ -980,6 +1005,13 @@ class TemplatePageEditor {
                 bannerElement.appendChild(backgroundContainer);
                 bannerElement.appendChild(contentOverlay);
                 
+                // Add click handler for component selection
+                bannerElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setActiveComponent(bannerData.id, 'BannerComponent', bannerData.data);
+                    this.openEditingPanel('BannerComponent', bannerData.data);
+                });
+                
                 element.appendChild(bannerElement);
                 element.style.width = '100%';
                 element.style.minHeight = '400px';
@@ -1075,11 +1107,48 @@ class TemplatePageEditor {
                 element.innerHTML = '<div class="image-placeholder"><i class="fas fa-image"></i><span>Image</span></div>';
                 element.style.width = '200px';
                 element.style.height = '150px';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Create a basic component data structure for the image
+                    const imageComponentData = {
+                        id: `image-${Date.now()}`,
+                        type: 'ImageComponent',
+                        data: {
+                            imageUrl: '',
+                            altText: '',
+                            width: 200,
+                            height: 150
+                        }
+                    };
+                    this.setActiveComponent(imageComponentData.id, 'ImageComponent', imageComponentData.data);
+                    this.openEditingPanel('ImageComponent', imageComponentData);
+                });
                 break;
             case 'button':
                 element.innerHTML = '<button class="canvas-button">Button</button>';
                 element.style.width = '120px';
                 element.style.height = '40px';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Create a basic component data structure for the button
+                    const buttonComponentData = {
+                        id: `button-${Date.now()}`,
+                        type: 'ButtonComponent',
+                        data: {
+                            text: 'Button',
+                            url: '',
+                            style: 'primary',
+                            width: 120,
+                            height: 40
+                        }
+                    };
+                    this.setActiveComponent(buttonComponentData.id, 'ButtonComponent', buttonComponentData.data);
+                    this.openEditingPanel('ButtonComponent', buttonComponentData);
+                });
                 break;
             case 'container':
                 element.innerHTML = '<div class="container-element">Container</div>';
@@ -1087,6 +1156,28 @@ class TemplatePageEditor {
                 element.style.height = '200px';
                 element.style.border = '1px dashed #cbd5e1';
                 element.style.backgroundColor = '#f8fafc';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Create a basic component data structure for the container
+                    const containerComponentData = {
+                        id: `container-${Date.now()}`,
+                        type: 'ContainerComponent',
+                        data: {
+                            width: 300,
+                            height: 200,
+                            backgroundColor: '#f8fafc',
+                            borderColor: '#cbd5e1',
+                            borderStyle: 'dashed',
+                            borderWidth: 1,
+                            padding: 10,
+                            margin: 0
+                        }
+                    };
+                    this.setActiveComponent(containerComponentData.id, 'ContainerComponent', containerComponentData.data);
+                    this.openEditingPanel('ContainerComponent', containerComponentData);
+                });
                 break;
         }
 
@@ -1276,7 +1367,7 @@ class TemplatePageEditor {
             return;
         }
 
-        // Show panel and render content
+        // Show the panel when a component is selected
         editingPanel.style.display = 'block';
 
         // Create panel header
@@ -1414,13 +1505,18 @@ class TemplatePageEditor {
             // Prepare page data for API
             const pageData = this.currentPage.toJSON ? this.currentPage.toJSON() : this.serializeCanvasToPage().toJSON();
 
+            // API expects only the components array, not the entire page object
+            const requestBody = {
+                components: pageData.components || []
+            };
+
             // Make API call to save page
             const response = await fetch(`/api/pages/${this.pageId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(pageData)
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -1429,9 +1525,8 @@ class TemplatePageEditor {
 
             const result = await response.json();
             
-            if (!result.success) {
-                throw new Error(result.error || 'Failed to save page');
-            }
+            // The API returns the page data directly, not wrapped in a success object
+            // So we don't need to check for result.success
 
             // Clear unsaved changes flag
             this.hasUnsavedChanges = false;
@@ -1473,7 +1568,7 @@ class TemplatePageEditor {
             // Basic validation based on component type
             switch (component.type) {
                 case 'TextComponent':
-                    if (!component.data || !component.data.content) {
+                    if (!component.data || !component.data.data) {
                         return false;
                     }
                     break;
@@ -1488,12 +1583,37 @@ class TemplatePageEditor {
                     }
                     break;
                 case 'BannerComponent':
-                    if (!component.data || !component.data.title) {
+                    // BannerComponent has headlineText, not title
+                    if (!component.data || !component.data.headlineText) {
                         return false;
                     }
                     break;
                 case 'LinkGroupComponent':
                     if (!component.data || !Array.isArray(component.data.links) || component.data.links.length === 0) {
+                        return false;
+                    }
+                    break;
+                case 'ImageComponent':
+                    // ImageComponent validation - just check that data exists
+                    if (!component.data) {
+                        return false;
+                    }
+                    break;
+                case 'ButtonComponent':
+                    // ButtonComponent validation - just check that data exists
+                    if (!component.data) {
+                        return false;
+                    }
+                    break;
+                case 'ContainerComponent':
+                    // ContainerComponent validation - just check that data exists
+                    if (!component.data) {
+                        return false;
+                    }
+                    break;
+                default:
+                    // For unknown component types, just check that data exists
+                    if (!component.data) {
                         return false;
                     }
                     break;
@@ -1576,6 +1696,300 @@ class TemplatePageEditor {
     }
 
     /**
+     * Initialize Save Version Components - Work Order 29
+     */
+    initializeSaveVersionComponents() {
+        // Create container for SaveVersionModal
+        let modalContainer = document.getElementById('save-version-modal-container');
+        if (!modalContainer) {
+            modalContainer = document.createElement('div');
+            modalContainer.id = 'save-version-modal-container';
+            document.body.appendChild(modalContainer);
+        }
+
+        // Initialize SaveVersionModal
+        if (window.SaveVersionModal) {
+            this.saveVersionModal = new window.SaveVersionModal(modalContainer, {
+                onSave: this.handleSaveVersion.bind(this),
+                onCancel: this.handleSaveVersionCancel.bind(this),
+                onClose: this.handleSaveVersionClose.bind(this)
+            });
+        }
+
+        console.log('Save Version components initialized');
+    }
+
+    /**
+     * Initialize Version History Manager - Work Order 40
+     */
+    initializeVersionHistoryManager() {
+        // Only initialize if VersionHistoryManager is available
+        if (!window.VersionHistoryManager) {
+            console.warn('VersionHistoryManager not available, skipping initialization');
+            return;
+        }
+
+        // Get the version history panel container
+        const panelContainer = document.getElementById('version-history-panel-container');
+        if (!panelContainer) {
+            console.warn('Version history panel container not found, will initialize when needed');
+            this.versionHistoryManager = null; // Will be initialized when first needed
+            return;
+        }
+
+        // Initialize VersionHistoryManager
+        try {
+            this.versionHistoryManager = new window.VersionHistoryManager(panelContainer, {
+                onViewVersion: this.handleViewVersion.bind(this),
+                onRevertVersion: this.handleRevertVersion.bind(this),
+                onRefreshPage: this.handleVersionRevertRefresh.bind(this)
+            });
+            console.log('Version History Manager initialized');
+        } catch (error) {
+            console.error('Error initializing VersionHistoryManager:', error);
+            this.versionHistoryManager = null;
+        }
+    }
+
+    /**
+     * Handle save version request
+     */
+    handleSaveVersionRequest() {
+        if (!this.saveVersionModal) {
+            console.error('SaveVersionModal not initialized');
+            this.showNotification('Save version functionality not available', 'error');
+            return;
+        }
+
+        // Check for pageId in PageEditor context first, then main app context
+        let currentPageId = null;
+        if (this.pageEditor && this.pageEditor.pageId) {
+            currentPageId = this.pageEditor.pageId;
+            console.log('Using PageEditor pageId:', currentPageId);
+        } else if (this.pageId) {
+            currentPageId = this.pageId;
+            console.log('Using main app pageId:', currentPageId);
+        }
+
+        if (!currentPageId) {
+            this.showNotification('No page loaded for versioning', 'error');
+            return;
+        }
+
+        // Show the modal
+        this.saveVersionModal.show(currentPageId);
+    }
+
+    /**
+     * Handle save version API call
+     */
+    async handleSaveVersion(data) {
+        try {
+            // Get current page content
+            const pageContent = this.getCurrentPageContent();
+            
+            // Prepare request body
+            const requestBody = {
+                pageId: data.pageId,
+                versionName: data.versionName,
+                changeDescription: data.changeDescription,
+                content: pageContent
+            };
+
+            // Make API call
+            const response = await fetch(`/api/pages/${data.pageId}/versions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return { success: true, data: result };
+        } catch (error) {
+            console.error('Save version error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Handle save version cancel
+     */
+    handleSaveVersionCancel() {
+        console.log('Save version cancelled');
+    }
+
+    /**
+     * Handle save version close
+     */
+    handleSaveVersionClose() {
+        console.log('Save version modal closed');
+    }
+
+    /**
+     * Get current page content for versioning
+     */
+    getCurrentPageContent() {
+        if (this.pageEditor && this.pageEditor.page) {
+            // Use PageEditor's page data
+            console.log('Using PageEditor page content for versioning');
+            return this.pageEditor.page.toJSON();
+        } else if (this.currentPage) {
+            // Use current page data
+            console.log('Using main app page content for versioning');
+            return this.currentPage.toJSON();
+        } else {
+            // Fallback: serialize canvas elements
+            console.log('Using canvas serialization for versioning');
+            return this.serializeCanvasToPage();
+        }
+    }
+
+    /**
+     * Add Save Version button to PageEditor
+     */
+    addSaveVersionButtonToPageEditor() {
+        if (!this.pageEditor || !window.SaveButton) {
+            return;
+        }
+
+        // Find or create toolbar in PageEditor
+        let toolbar = document.querySelector('#page-editor-container .page-editor-toolbar');
+        if (!toolbar) {
+            // Create toolbar if it doesn't exist
+            toolbar = document.createElement('div');
+            toolbar.className = 'page-editor-toolbar';
+            toolbar.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1001;
+                display: flex;
+                gap: 10px;
+            `;
+            
+            const editorContainer = document.getElementById('page-editor-container');
+            if (editorContainer) {
+                editorContainer.appendChild(toolbar);
+            }
+        }
+
+        // Create Save Version button container
+        const saveButtonContainer = document.createElement('div');
+        saveButtonContainer.id = 'save-version-button-container';
+        
+        // Initialize SaveButton
+        this.saveButton = new window.SaveButton(saveButtonContainer, {
+            text: 'Save Version',
+            className: 'save-version-btn'
+        });
+
+        // Add to toolbar
+        toolbar.appendChild(saveButtonContainer);
+    }
+
+    /**
+     * Toggle Version History Panel - Work Order 40
+     */
+    toggleVersionHistory() {
+        console.log('toggleVersionHistory called');
+        
+        // Initialize VersionHistoryManager if not already initialized
+        if (!this.versionHistoryManager) {
+            console.log('VersionHistoryManager not initialized, initializing...');
+            this.initializeVersionHistoryManager();
+            if (!this.versionHistoryManager) {
+                console.error('VersionHistoryManager not available');
+                this.showNotification('Version history not available', 'error');
+                return;
+            }
+        }
+
+        // Get current page ID
+        let currentPageId = null;
+        if (this.pageEditor && this.pageEditor.pageId) {
+            currentPageId = this.pageEditor.pageId;
+        } else if (this.pageId) {
+            currentPageId = this.pageId;
+        }
+
+        console.log('Current page ID:', currentPageId);
+
+        if (!currentPageId) {
+            this.showNotification('No page loaded for version history', 'error');
+            return;
+        }
+
+        // Toggle the panel
+        const isVisible = this.versionHistoryManager.isVisible();
+        console.log('Panel is visible:', isVisible);
+        
+        if (isVisible) {
+            console.log('Hiding version history panel');
+            this.versionHistoryManager.hide();
+        } else {
+            console.log('Showing version history panel');
+            this.versionHistoryManager.show(currentPageId);
+        }
+    }
+
+    /**
+     * Handle view version action - Work Order 40
+     * @param {PageVersion} version - Version to view
+     */
+    handleViewVersion(version) {
+        console.log('View version requested:', version);
+        
+        // Placeholder for VersionPreviewModal
+        // This would open a modal to preview the version content
+        this.showNotification(`Viewing version: ${version.getDisplayName ? version.getDisplayName() : `Version ${version.versionNumber}`}`, 'info');
+        
+        // TODO: Implement VersionPreviewModal
+        // For now, just show a notification
+    }
+
+    /**
+     * Handle revert version action - Work Order 40
+     * @param {PageVersion} version - Version to revert to
+     */
+    handleRevertVersion(version) {
+        console.log('Revert version requested:', version);
+        
+        // The actual revert logic is handled by VersionHistoryManager
+        // This method is called as a callback after successful revert
+        this.showNotification(`Reverted to ${version.getDisplayName ? version.getDisplayName() : `Version ${version.versionNumber}`}`, 'success');
+    }
+
+    /**
+     * Handle page refresh after version revert - Work Order 40
+     */
+    handleVersionRevertRefresh() {
+        console.log('Refreshing page content after version revert');
+        
+        // Refresh the current page content
+        let currentPageId = null;
+        if (this.pageEditor && this.pageEditor.pageId) {
+            currentPageId = this.pageEditor.pageId;
+            // Reload the page in PageEditor
+            this.pageEditor.loadPage(currentPageId);
+        } else if (this.pageId) {
+            currentPageId = this.pageId;
+            // Reload the page in main editor
+            this.loadPage(currentPageId);
+        }
+        
+        // Clear unsaved changes since we've reverted to a saved state
+        this.hasUnsavedChanges = false;
+        this.updateUnsavedChangesIndicator();
+    }
+
+    /**
      * Update unsaved changes indicator
      */
     updateUnsavedChangesIndicator() {
@@ -1642,6 +2056,9 @@ class TemplatePageEditor {
                 break;
             case 'test-page-editor':
                 this.testPageEditor();
+                break;
+            case 'version-history':
+                this.toggleVersionHistory();
                 break;
         }
     }
@@ -1907,60 +2324,132 @@ class TemplatePageEditor {
         localStorage.setItem('templatePageEditor_templates', JSON.stringify(this.templates));
     }
 
-    renderTemplates() {
+    async renderTemplates() {
         const grid = document.getElementById('templates-grid');
-        grid.innerHTML = '';
+        grid.innerHTML = '<div style="text-align: center; color: #64748b; grid-column: 1 / -1;">Loading templates...</div>';
 
-        if (this.templates.length === 0) {
-            grid.innerHTML = '<p style="text-align: center; color: #64748b; grid-column: 1 / -1;">No templates yet. Create your first template!</p>';
-            return;
-        }
-
-        this.templates.forEach(template => {
-            const card = document.createElement('div');
-            card.className = 'template-card';
-            
-            // Build source files info
-            let sourceFilesInfo = '';
-            if (template.sourceFigmaFileUrl || template.sourcePngFileUrl) {
-                sourceFilesInfo = '<div class="source-files-info" style="margin: 8px 0; font-size: 12px; color: #64748b;">';
-                if (template.sourceFigmaFileUrl) {
-                    sourceFilesInfo += '<div><i class="fas fa-file-image"></i> Figma</div>';
-                }
-                if (template.sourcePngFileUrl) {
-                    sourceFilesInfo += '<div><i class="fas fa-image"></i> PNG</div>';
-                }
-                sourceFilesInfo += '</div>';
+        try {
+            // Fetch templates from API
+            const response = await fetch('/api/templates');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const apiTemplates = await response.json();
             
-            card.innerHTML = `
-                <h3>${template.name}</h3>
-                <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
-                ${sourceFilesInfo}
-                <div class="template-actions">
-                    <button class="btn btn-primary" data-action="load-template" data-template-id="${template.id}">Load</button>
-                    <button class="btn" data-action="delete-template" data-template-id="${template.id}">Delete</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+            // Also load local templates from localStorage
+            this.loadTemplates();
+            
+            // Combine API templates with local templates
+            const allTemplates = [...apiTemplates, ...this.templates];
+            
+            grid.innerHTML = '';
+
+            if (allTemplates.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #64748b; grid-column: 1 / -1;">No templates yet. Create your first template!</p>';
+                return;
+            }
+
+            allTemplates.forEach(template => {
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                
+                // Build source files info
+                let sourceFilesInfo = '';
+                if (template.sourceFigmaFileUrl || template.sourcePngFileUrl) {
+                    sourceFilesInfo = '<div class="source-files-info" style="margin: 8px 0; font-size: 12px; color: #64748b;">';
+                    if (template.sourceFigmaFileUrl) {
+                        sourceFilesInfo += '<div><i class="fas fa-file-image"></i> Figma</div>';
+                    }
+                    if (template.sourcePngFileUrl) {
+                        sourceFilesInfo += '<div><i class="fas fa-image"></i> PNG</div>';
+                    }
+                    sourceFilesInfo += '</div>';
+                }
+                
+                // Determine if this is an API template or local template
+                const isApiTemplate = apiTemplates.some(apiT => apiT.id === template.id);
+                const templateType = isApiTemplate ? 'API Template' : 'Local Template';
+                
+                card.innerHTML = `
+                    <h3>${template.name}</h3>
+                    <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
+                    <p style="font-size: 12px; color: #64748b; margin: 4px 0;">${templateType}</p>
+                    ${sourceFilesInfo}
+                    <div class="template-actions">
+                        <button class="btn btn-primary" data-action="load-template" data-template-id="${template.id}" data-template-type="${isApiTemplate ? 'api' : 'local'}">Load</button>
+                        ${!isApiTemplate ? `<button class="btn" data-action="delete-template" data-template-id="${template.id}">Delete</button>` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        } catch (error) {
+            console.error('Error loading templates:', error);
+            grid.innerHTML = '<p style="text-align: center; color: #e53e3e; grid-column: 1 / -1;">Error loading templates. Please try again.</p>';
+        }
     }
 
-    loadTemplate(id) {
-        const template = this.templates.find(t => t.id === id);
-        if (template) {
-            this.switchSection('editor');
-            this.clearCanvas();
+    async loadTemplate(id, templateType = 'local') {
+        try {
+            let template;
             
-            // Load structured data if available, otherwise fallback to HTML
-            if (template.page) {
-                this.loadPageFromData(template.page);
-            } else if (template.html) {
-                // Fallback for legacy templates
-                const canvas = document.getElementById('canvas');
-                canvas.innerHTML = template.html;
-                this.convertLegacyElementsToStructured();
+            if (templateType === 'api') {
+                // Fetch template from API
+                const response = await fetch(`/api/templates/${id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                template = await response.json();
+                
+                this.switchSection('editor');
+                this.clearCanvas();
+                
+                // Create a page from the API template using the proper method
+                if (window.Page && template.components) {
+                    const page = Page.createFromTemplate(template);
+                    // Use an existing page ID instead of generating a new one
+                    const existingPageId = '750e8400-e29b-41d4-a716-446655440001';
+                    const pageData = page.toJSON();
+                    pageData.id = existingPageId; // Override with valid UUID
+                    this.loadPageFromData(pageData);
+                } else {
+                    // Fallback for templates without components
+                    const pageData = {
+                        id: '750e8400-e29b-41d4-a716-446655440001', // Use existing page ID
+                        templateId: template.id,
+                        components: [],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    this.loadPageFromData(pageData);
+                }
+                
+                this.showNotification(`API Template "${template.name}" loaded successfully!`);
+                
+            } else {
+                // Load local template
+                template = this.templates.find(t => t.id === id);
+                if (template) {
+                    this.switchSection('editor');
+                    this.clearCanvas();
+                    
+                    // Load structured data if available, otherwise fallback to HTML
+                    if (template.page) {
+                        this.loadPageFromData(template.page);
+                    } else if (template.html) {
+                        // Fallback for legacy templates
+                        const canvas = document.getElementById('canvas');
+                        canvas.innerHTML = template.html;
+                        this.convertLegacyElementsToStructured();
+                    }
+                    
+                    this.showNotification('Local template loaded successfully!');
+                } else {
+                    this.showNotification('Template not found!', 'error');
+                }
             }
+        } catch (error) {
+            console.error('Error loading template:', error);
+            this.showNotification('Error loading template!', 'error');
         }
     }
 
@@ -1970,15 +2459,22 @@ class TemplatePageEditor {
      */
     loadPageFromData(pageData) {
         try {
+            let page;
+            
             // Use PageStateManager if available, otherwise fallback to Page
             if (window.PageStateManager) {
-                const page = PageStateManager.fromJSON(pageData);
+                page = PageStateManager.fromJSON(pageData);
                 this.currentPage = page;
                 this.stateManager = page;
                 this.setupStateEventListeners();
             } else {
-                const page = Page.fromJSON(pageData);
+                page = Page.fromJSON(pageData);
                 this.currentPage = page;
+            }
+            
+            // Set the page ID for save functionality
+            if (pageData.id) {
+                this.setPageId(pageData.id);
             }
             
             const canvas = document.getElementById('canvas');
@@ -2029,6 +2525,9 @@ class TemplatePageEditor {
             enableRealTimeUpdates: true,
             autoSave: false
         });
+
+        // Add Save Version button to PageEditor
+        this.addSaveVersionButtonToPageEditor();
 
         // Setup PageEditor event listeners
         this.setupPageEditorEventListeners();
@@ -2155,7 +2654,7 @@ class TemplatePageEditor {
                 textEditor.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.setActiveComponent(component.id, 'TextComponent', component.data);
-                    this.openEditingPanel('TextComponent', component.data);
+                    this.openEditingPanel('TextComponent', component);
                 });
                 
                 element.appendChild(textEditor);
@@ -2165,12 +2664,38 @@ class TemplatePageEditor {
                 element.innerHTML = '<div class="image-placeholder"><i class="fas fa-image"></i><span>Image</span></div>';
                 element.style.width = '200px';
                 element.style.height = '150px';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setActiveComponent(component.id, 'ImageComponent', component.data);
+                    this.openEditingPanel('ImageComponent', component);
+                });
                 break;
                 
             case 'ButtonComponent':
                 element.innerHTML = '<button class="canvas-button">Button</button>';
                 element.style.width = '120px';
                 element.style.height = '40px';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Create a basic component data structure for the button
+                    const buttonComponentData = {
+                        id: `button-${Date.now()}`,
+                        type: 'ButtonComponent',
+                        data: {
+                            text: 'Button',
+                            url: '',
+                            style: 'primary',
+                            width: 120,
+                            height: 40
+                        }
+                    };
+                    this.setActiveComponent(buttonComponentData.id, 'ButtonComponent', buttonComponentData.data);
+                    this.openEditingPanel('ButtonComponent', buttonComponentData);
+                });
                 break;
                 
             case 'ContainerComponent':
@@ -2179,6 +2704,28 @@ class TemplatePageEditor {
                 element.style.height = '200px';
                 element.style.border = '1px dashed #cbd5e1';
                 element.style.backgroundColor = '#f8fafc';
+                
+                // Add click handler for component selection
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Create a basic component data structure for the container
+                    const containerComponentData = {
+                        id: `container-${Date.now()}`,
+                        type: 'ContainerComponent',
+                        data: {
+                            width: 300,
+                            height: 200,
+                            backgroundColor: '#f8fafc',
+                            borderColor: '#cbd5e1',
+                            borderStyle: 'dashed',
+                            borderWidth: 1,
+                            padding: 10,
+                            margin: 0
+                        }
+                    };
+                    this.setActiveComponent(containerComponentData.id, 'ContainerComponent', containerComponentData.data);
+                    this.openEditingPanel('ContainerComponent', containerComponentData);
+                });
                 break;
                 
             case 'AccordionComponent':
@@ -2202,7 +2749,7 @@ class TemplatePageEditor {
                 accordionElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.setActiveComponent(accordionData.id, 'AccordionComponent', accordionData.data);
-                    this.openEditingPanel('AccordionComponent', accordionData.data);
+                    this.openEditingPanel('AccordionComponent', accordionData);
                 });
                 
                 // Create accordion items
@@ -2245,7 +2792,76 @@ class TemplatePageEditor {
                 // CardComponent case handled in createElement method
                 break;
                 
+            case 'BannerComponent':
+                const bannerComponent = new BannerComponent(component);
+                const bannerData = bannerComponent.toJSON();
                 
+                // Create banner HTML structure
+                const bannerElement = document.createElement('div');
+                bannerElement.className = 'banner-component';
+                bannerElement.setAttribute('data-banner-data', JSON.stringify(bannerData));
+                bannerElement.setAttribute('data-component-id', bannerData.id);
+                bannerElement.setAttribute('data-component-type', 'BannerComponent');
+                bannerElement.style.width = '100%';
+                bannerElement.style.minHeight = '300px';
+                bannerElement.style.border = '1px solid #e2e8f0';
+                bannerElement.style.borderRadius = '8px';
+                bannerElement.style.backgroundColor = 'white';
+                bannerElement.style.padding = '20px';
+                bannerElement.style.position = 'relative';
+                bannerElement.style.backgroundImage = bannerData.data.backgroundImageUrl ? `url(${bannerData.data.backgroundImageUrl})` : 'none';
+                bannerElement.style.backgroundSize = 'cover';
+                bannerElement.style.backgroundPosition = 'center';
+                bannerElement.style.backgroundRepeat = 'no-repeat';
+                
+                // Create banner content
+                const bannerContent = document.createElement('div');
+                bannerContent.style.textAlign = 'center';
+                bannerContent.style.color = bannerData.data.backgroundImageUrl ? 'white' : '#1f2937';
+                bannerContent.style.textShadow = bannerData.data.backgroundImageUrl ? '2px 2px 4px rgba(0,0,0,0.5)' : 'none';
+                
+                // Headline
+                const headlineElement = document.createElement('h1');
+                headlineElement.textContent = bannerData.data.headlineText || 'Banner Headline';
+                headlineElement.style.fontSize = '2.5rem';
+                headlineElement.style.fontWeight = 'bold';
+                headlineElement.style.marginBottom = '1rem';
+                headlineElement.style.marginTop = '0';
+                
+                // Call to action button
+                if (bannerData.data.callToAction && bannerData.data.callToAction.buttonText) {
+                    const ctaButton = document.createElement('button');
+                    ctaButton.textContent = bannerData.data.callToAction.buttonText;
+                    ctaButton.style.backgroundColor = '#2563eb';
+                    ctaButton.style.color = 'white';
+                    ctaButton.style.border = 'none';
+                    ctaButton.style.padding = '12px 24px';
+                    ctaButton.style.borderRadius = '6px';
+                    ctaButton.style.fontSize = '1.1rem';
+                    ctaButton.style.fontWeight = '600';
+                    ctaButton.style.cursor = 'pointer';
+                    ctaButton.style.marginTop = '1rem';
+                    ctaButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (bannerData.data.callToAction.linkUrl) {
+                            window.open(bannerData.data.callToAction.linkUrl, '_blank');
+                        }
+                    });
+                    bannerContent.appendChild(ctaButton);
+                }
+                
+                bannerContent.appendChild(headlineElement);
+                bannerElement.appendChild(bannerContent);
+                
+                // Add click handler for component selection
+                bannerElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.setActiveComponent(bannerData.id, 'BannerComponent', bannerData.data);
+                    this.openEditingPanel('BannerComponent', bannerData);
+                });
+                
+                element.appendChild(bannerElement);
+                break;
                 
             case 'LinkGroupComponent':
                 // Create LinkGroupComponent from structured data
@@ -2753,6 +3369,8 @@ class TemplatePageEditor {
         if (this.currentPage) {
             try {
                 this.currentPage.updateBannerComponentHeadline(componentId, headlineText);
+                // Trigger rerender to update canvas display
+                this.rerenderComponent(componentId);
             } catch (error) {
                 console.error('Failed to update banner headline:', error);
                 this.showNotification('Failed to update headline: ' + error.message, 'error');
@@ -2764,6 +3382,8 @@ class TemplatePageEditor {
         if (this.currentPage) {
             try {
                 this.currentPage.updateBannerComponentBackgroundImage(componentId, backgroundImageUrl, backgroundImageAltText);
+                // Trigger rerender to update canvas display
+                this.rerenderComponent(componentId);
             } catch (error) {
                 console.error('Failed to update banner background image:', error);
                 this.showNotification('Failed to update background image: ' + error.message, 'error');
@@ -2775,10 +3395,75 @@ class TemplatePageEditor {
         if (this.currentPage) {
             try {
                 this.currentPage.updateBannerComponentCallToAction(componentId, callToAction);
+                // Trigger rerender to update canvas display
+                this.rerenderComponent(componentId);
             } catch (error) {
                 console.error('Failed to update banner call-to-action:', error);
                 this.showNotification('Failed to update call-to-action: ' + error.message, 'error');
             }
+        }
+    }
+
+    /**
+     * Re-render banner component on canvas with updated data
+     * @param {HTMLElement} element - The banner element to update
+     * @param {Object} component - The updated component data
+     */
+    rerenderBannerComponent(element, component) {
+        if (!element || !component || !component.data) {
+            console.error('Invalid parameters for rerenderBannerComponent');
+            return;
+        }
+
+        try {
+            // Update the stored component data
+            element.setAttribute('data-component', JSON.stringify(component));
+            element.setAttribute('data-banner-data', JSON.stringify(component));
+
+            // Find and update headline input
+            const headlineInput = element.querySelector('input[type="text"]');
+            if (headlineInput && component.data.headlineText !== undefined) {
+                headlineInput.value = component.data.headlineText;
+            }
+
+            // Find and update button text input
+            const buttonTextInput = element.querySelector('input[placeholder="Button text..."]');
+            if (buttonTextInput && component.data.callToAction && component.data.callToAction.buttonText !== undefined) {
+                buttonTextInput.value = component.data.callToAction.buttonText;
+            }
+
+            // Find and update link URL input
+            const linkUrlInput = element.querySelector('input[placeholder="Link URL..."]');
+            if (linkUrlInput && component.data.callToAction && component.data.callToAction.linkUrl !== undefined) {
+                linkUrlInput.value = component.data.callToAction.linkUrl;
+            }
+
+            // Find and update link target select
+            const linkTargetSelect = element.querySelector('select');
+            if (linkTargetSelect && component.data.callToAction && component.data.callToAction.linkTarget !== undefined) {
+                linkTargetSelect.value = component.data.callToAction.linkTarget;
+            }
+
+            // Update background image if BannerImageUploader is available
+            if (element.bannerImageUploader && component.data.backgroundImageUrl !== undefined) {
+                element.bannerImageUploader.updateImage(component.data.backgroundImageUrl, component.data.backgroundImageAltText || '');
+            }
+
+            // Update background image container if it has a background image
+            const backgroundContainer = element.querySelector('.banner-background-container');
+            if (backgroundContainer && component.data.backgroundImageUrl) {
+                backgroundContainer.style.backgroundImage = `url(${component.data.backgroundImageUrl})`;
+                backgroundContainer.style.backgroundSize = 'cover';
+                backgroundContainer.style.backgroundPosition = 'center';
+                backgroundContainer.style.backgroundRepeat = 'no-repeat';
+            } else if (backgroundContainer) {
+                backgroundContainer.style.backgroundImage = 'none';
+            }
+
+            console.log('Banner component re-rendered successfully');
+        } catch (error) {
+            console.error('Error re-rendering banner component:', error);
+            this.showNotification('Failed to update banner display: ' + error.message, 'error');
         }
     }
 

@@ -538,6 +538,59 @@ class Page {
     }
 
     /**
+     * Reorder AccordionComponent items
+     * @param {string} componentId - Component ID
+     * @param {Array} itemIds - Array of item IDs in new order
+     * @returns {boolean} Success status
+     */
+    reorderAccordionItems(componentId, itemIds) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.reorderItems(itemIds);
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update AccordionComponent item header
+     * @param {string} componentId - Component ID
+     * @param {string} itemId - Item ID
+     * @param {string} newHeader - New header text
+     * @returns {boolean} Success status
+     */
+    updateAccordionItemHeader(componentId, itemId, newHeader) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.updateItem(itemId, { header: newHeader });
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
+     * Update AccordionComponent item content
+     * @param {string} componentId - Component ID
+     * @param {string} itemId - Item ID
+     * @param {Object} newContent - New content object
+     * @returns {boolean} Success status
+     */
+    updateAccordionItemContent(componentId, itemId, newContent) {
+        const accordionComponent = this.getAccordionComponentById(componentId);
+        if (!accordionComponent) {
+            throw new Error(`AccordionComponent with ID '${componentId}' not found`);
+        }
+
+        accordionComponent.updateItem(itemId, { content: newContent });
+        this.updateComponent(componentId, accordionComponent.toJSON());
+        return true;
+    }
+
+    /**
      * Get accordion content statistics
      * @returns {Object} Accordion content statistics
      */
@@ -869,6 +922,23 @@ class Page {
     }
 
     /**
+     * Update BannerComponent call-to-action with notification
+     * @param {string} componentId - Component ID
+     * @param {Object} callToAction - New call-to-action data
+     * @returns {boolean} Success status
+     */
+    updateBannerComponentCallToActionWithNotification(componentId, callToAction) {
+        const success = this.updateBannerComponentCallToAction(componentId, callToAction);
+        if (success) {
+            this.notifyListeners('bannerCallToActionUpdated', {
+                componentId,
+                callToAction
+            });
+        }
+        return success;
+    }
+
+    /**
      * Get banner content statistics
      * @returns {Object} Banner content statistics
      */
@@ -1093,6 +1163,76 @@ class Page {
     }
 
     /**
+     * Add a link to LinkGroupComponent with notification
+     * @param {string} componentId - Component ID
+     * @param {Object} linkData - Link data
+     * @returns {boolean} Success status
+     */
+    addLinkToGroupWithNotification(componentId, linkData) {
+        const success = this.addLinkToGroup(componentId, linkData);
+        if (success) {
+            this.notifyListeners('linkGroupLinkAdded', {
+                componentId,
+                linkData
+            });
+        }
+        return success;
+    }
+
+    /**
+     * Remove a link from LinkGroupComponent with notification
+     * @param {string} componentId - Component ID
+     * @param {string} linkId - Link ID
+     * @returns {boolean} Success status
+     */
+    removeLinkFromGroupWithNotification(componentId, linkId) {
+        const success = this.removeLinkFromGroup(componentId, linkId);
+        if (success) {
+            this.notifyListeners('linkGroupLinkRemoved', {
+                componentId,
+                linkId
+            });
+        }
+        return success;
+    }
+
+    /**
+     * Update a link in LinkGroupComponent with notification
+     * @param {string} componentId - Component ID
+     * @param {string} linkId - Link ID
+     * @param {Object} updates - Link updates
+     * @returns {boolean} Success status
+     */
+    updateLinkInGroupWithNotification(componentId, linkId, updates) {
+        const success = this.updateLinkInGroup(componentId, linkId, updates);
+        if (success) {
+            this.notifyListeners('linkGroupLinkUpdated', {
+                componentId,
+                linkId,
+                updates
+            });
+        }
+        return success;
+    }
+
+    /**
+     * Reorder links in LinkGroupComponent with notification
+     * @param {string} componentId - Component ID
+     * @param {Array} linkIds - Array of link IDs in new order
+     * @returns {boolean} Success status
+     */
+    reorderLinksInGroupWithNotification(componentId, linkIds) {
+        const success = this.reorderLinksInGroup(componentId, linkIds);
+        if (success) {
+            this.notifyListeners('linkGroupLinksReordered', {
+                componentId,
+                linkIds
+            });
+        }
+        return success;
+    }
+
+    /**
      * Get link group content statistics
      * @returns {Object} Link group content statistics
      */
@@ -1193,10 +1333,11 @@ class Page {
             template.components.forEach((templateComponent, index) => {
                 if (templateComponent.type === 'text') {
                     const textComponent = new TextComponent({
-                        content: templateComponent.defaultValues?.content || 'Click to edit text',
-                        order: index + 1
+                        content: templateComponent.defaultValues?.content || 'Click to edit text'
                     });
-                    page.addComponent(textComponent.toJSON());
+                    const componentData = textComponent.toJSON();
+                    componentData.order = index + 1;
+                    page.addComponent(componentData);
                 } else {
                     // Handle other component types (basic structure for now)
                     page.addComponent({

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShareButton Test</title>
+    <link rel="stylesheet" href="public/styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="test-container">
+        <h1>ShareButton Integration Test</h1>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- Load required components -->
+    <script src="public/js/ShareButton.js"></script>
+    <script src="public/js/SharePageModal.js"></script>
+    <script src="public/js/PageEditor.js"></script>
+
+    <script>
+        function runTests() {
+            const results = document.getElementById('test-results');
+            let testResults = [];
+
+            // Test 1: ShareButton class exists
+            if (window.ShareButton) {
+                testResults.push('✅ ShareButton class is available');
+            } else {
+                testResults.push('❌ ShareButton class is not available');
+            }
+
+            // Test 2: SharePageModal class exists
+            if (window.SharePageModal) {
+                testResults.push('✅ SharePageModal class is available');
+            } else {
+                testResults.push('❌ SharePageModal class is not available');
+            }
+
+            // Test 3: PageEditor class exists
+            if (window.PageEditor) {
+                testResults.push('✅ PageEditor class is available');
+            } else {
+                testResults.push('❌ PageEditor class is not available');
+            }
+
+            // Test 4: Create ShareButton instance
+            try {
+                const shareButton = new ShareButton({
+                    onClick: () => {
+                        console.log('ShareButton clicked!');
+                    }
+                });
+                testResults.push('✅ ShareButton instance created successfully');
+                
+                // Test 5: ShareButton has element
+                if (shareButton.getElement()) {
+                    testResults.push('✅ ShareButton element created');
+                } else {
+                    testResults.push('❌ ShareButton element not created');
+                }
+            } catch (error) {
+                testResults.push('❌ ShareButton creation failed: ' + error.message);
+            }
+
+            // Test 6: Create SharePageModal instance
+            try {
+                const shareModal = new SharePageModal({
+                    onClose: () => {
+                        console.log('SharePageModal closed!');
+                    }
+                });
+                testResults.push('✅ SharePageModal instance created successfully');
+            } catch (error) {
+                testResults.push('❌ SharePageModal creation failed: ' + error.message);
+            }
+
+            // Test 7: Create PageEditor instance
+            try {
+                const pageEditor = new PageEditor('test-container', {
+                    showEditingPanel: false
+                });
+                testResults.push('✅ PageEditor instance created successfully');
+                
+                // Test 8: Check if ShareButton is integrated
+                const shareButtonContainer = document.getElementById('share-button-container');
+                if (shareButtonContainer) {
+                    testResults.push('✅ ShareButton container found in PageEditor');
+                } else {
+                    testResults.push('❌ ShareButton container not found in PageEditor');
+                }
+            } catch (error) {
+                testResults.push('❌ PageEditor creation failed: ' + error.message);
+            }
+
+            // Display results
+            results.innerHTML = testResults.map(result => `<div>${result}</div>`).join('');
+        }
+
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

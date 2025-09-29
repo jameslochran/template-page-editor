@@ -410,7 +410,7 @@ class TextComponent {
         return {
             id: this.id,
             type: this.type,
-            content: this.content,
+            data: this.content,
             order: this.order,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt

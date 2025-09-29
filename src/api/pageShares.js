@@ -25,7 +25,7 @@ const authenticateUser = (req, res, next) => {
     // For demo purposes, we'll use a mock user ID
     // In a real implementation, this would extract user info from JWT token or session
     req.user = {
-        id: 'user-123', // Mock authenticated user ID
+        id: '550e8400-e29b-41d4-a716-446655440010', // Mock authenticated user ID
         email: 'user@example.com',
         name: 'Test User'
     };
@@ -100,7 +100,8 @@ router.post('/:pageId/share', authenticateUser, validatePageId, async (req, res)
             pageId, 
             userId, 
             sharedByUserId, 
-            permissionLevel
+            permissionLevel,
+            req
         );
         
         res.status(201).json(result);
@@ -152,7 +153,8 @@ router.put('/:pageId/share/:shareId', authenticateUser, validatePageId, validate
             pageId, 
             shareId, 
             permissionLevel, 
-            requestingUserId
+            requestingUserId,
+            req
         );
         
         res.json(result);
@@ -191,7 +193,8 @@ router.delete('/:pageId/share/:shareId', authenticateUser, validatePageId, valid
         const result = await pageShareController.deletePageShare(
             pageId, 
             shareId, 
-            requestingUserId
+            requestingUserId,
+            req
         );
         
         res.json(result);
@@ -223,7 +226,7 @@ router.get('/:pageId/share', authenticateUser, validatePageId, async (req, res) 
         const { pageId } = req.params;
         const requestingUserId = req.user.id;
         
-        const shares = await pageShareController.getPageShares(pageId, requestingUserId);
+        const shares = await pageShareController.getPageShares(pageId, requestingUserId, req);
         
         res.json(shares);
     } catch (error) {
@@ -249,7 +252,7 @@ router.get('/users/me/shared-pages', authenticateUser, async (req, res) => {
     try {
         const userId = req.user.id;
         
-        const sharedPages = await pageShareController.getSharedPages(userId);
+        const sharedPages = await pageShareController.getSharedPages(userId, req);
         
         res.json(sharedPages);
     } catch (error) {
@@ -267,7 +270,7 @@ router.get('/:pageId/share/stats', authenticateUser, validatePageId, async (req,
     try {
         const { pageId } = req.params;
         
-        const stats = await pageShareController.getPageShareStats(pageId);
+        const stats = await pageShareController.getPageShareStats(pageId, req);
         
         res.json(stats);
     } catch (error) {

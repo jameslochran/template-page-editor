@@ -5,8 +5,17 @@ const morgan = require('morgan');
 const path = require('path');
 require('dotenv').config();
 
+// Import services
+const PageShareService = require('./src/services/pageShareService');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize services
+const pageShareService = new PageShareService();
+
+// Make services available to routes
+app.locals.pageShareService = pageShareService;
 
 // In-memory data structures for templates and categories
 const categories = [
@@ -27,7 +36,40 @@ const templates = [
     thumbnail: '/images/templates/business-homepage.jpg',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T10:00:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Welcome to Our Business',
+          callToAction: {
+            buttonText: 'Get Started',
+            linkUrl: '#contact'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Business background'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'We provide innovative solutions to help your business grow and succeed in today\'s competitive market.',
+          format: 'html'
+        }
+      },
+      {
+        type: 'card',
+        defaultValues: {
+          title: 'Our Services',
+          description: {
+            format: 'html',
+            data: 'We offer a comprehensive range of services designed to meet your business needs.'
+          },
+          imageUrl: '',
+          altText: 'Services illustration'
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440002',
@@ -37,7 +79,41 @@ const templates = [
     thumbnail: '/images/templates/ecommerce-showcase.jpg',
     createdAt: '2024-01-16T14:30:00Z',
     updatedAt: '2024-01-16T14:30:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Shop Our Latest Collection',
+          callToAction: {
+            buttonText: 'Shop Now',
+            linkUrl: '#products'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Product showcase'
+        }
+      },
+      {
+        type: 'card',
+        defaultValues: {
+          title: 'Featured Product',
+          description: {
+            format: 'html',
+            data: 'Discover our most popular items with unbeatable quality and style.'
+          },
+          imageUrl: '',
+          altText: 'Featured product'
+        }
+      },
+      {
+        type: 'button',
+        defaultValues: {
+          text: 'Add to Cart',
+          style: 'primary',
+          linkUrl: '#cart'
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440003',
@@ -47,7 +123,37 @@ const templates = [
     thumbnail: '/images/templates/portfolio-landing.jpg',
     createdAt: '2024-01-17T09:15:00Z',
     updatedAt: '2024-01-17T09:15:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Creative Portfolio',
+          callToAction: {
+            buttonText: 'View My Work',
+            linkUrl: '#portfolio'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Creative background'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'I am a passionate creative professional specializing in innovative design solutions.',
+          format: 'html'
+        }
+      },
+      {
+        type: 'image',
+        defaultValues: {
+          imageUrl: '',
+          altText: 'Portfolio showcase',
+          width: 400,
+          height: 300
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440004',
@@ -57,7 +163,44 @@ const templates = [
     thumbnail: '/images/templates/corporate-about.jpg',
     createdAt: '2024-01-18T11:45:00Z',
     updatedAt: '2024-01-18T11:45:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'About Our Company',
+          callToAction: {
+            buttonText: 'Learn More',
+            linkUrl: '#history'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Corporate background'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'We are a leading company with over 20 years of experience in delivering exceptional solutions to our clients.',
+          format: 'html'
+        }
+      },
+      {
+        type: 'accordion',
+        defaultValues: {
+          title: 'Company Information',
+          items: [
+            {
+              title: 'Our Mission',
+              content: 'To provide innovative solutions that drive business success.'
+            },
+            {
+              title: 'Our Values',
+              content: 'Integrity, excellence, and customer satisfaction are at the core of everything we do.'
+            }
+          ]
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440005',
@@ -67,7 +210,32 @@ const templates = [
     thumbnail: '/images/templates/blog-article.jpg',
     createdAt: '2024-01-19T16:20:00Z',
     updatedAt: '2024-01-19T16:20:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'text',
+        defaultValues: {
+          content: '<h1>Blog Article Title</h1><p>This is a sample blog article with clean, readable formatting.</p>',
+          format: 'html'
+        }
+      },
+      {
+        type: 'image',
+        defaultValues: {
+          imageUrl: '',
+          altText: 'Article featured image',
+          width: 600,
+          height: 400
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>',
+          format: 'html'
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440006',
@@ -77,7 +245,36 @@ const templates = [
     thumbnail: '/images/templates/saas-landing.jpg',
     createdAt: '2024-01-20T13:10:00Z',
     updatedAt: '2024-01-20T13:10:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Revolutionary SaaS Solution',
+          callToAction: {
+            buttonText: 'Start Free Trial',
+            linkUrl: '#signup'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'SaaS platform'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'Transform your business with our cutting-edge software solution. Join thousands of satisfied customers.',
+          format: 'html'
+        }
+      },
+      {
+        type: 'button',
+        defaultValues: {
+          text: 'Get Started Now',
+          style: 'primary',
+          linkUrl: '#pricing'
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440007',
@@ -87,7 +284,40 @@ const templates = [
     thumbnail: '/images/templates/restaurant-menu.jpg',
     createdAt: '2024-01-21T08:30:00Z',
     updatedAt: '2024-01-21T08:30:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Welcome to Our Restaurant',
+          callToAction: {
+            buttonText: 'Make Reservation',
+            linkUrl: '#reservation'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Restaurant interior'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'Experience fine dining with our carefully crafted menu featuring fresh, locally sourced ingredients.',
+          format: 'html'
+        }
+      },
+      {
+        type: 'card',
+        defaultValues: {
+          title: 'Chef\'s Special',
+          description: {
+            format: 'html',
+            data: 'Our signature dish prepared with the finest ingredients and traditional cooking techniques.'
+          },
+          imageUrl: '',
+          altText: 'Chef special dish'
+        }
+      }
+    ]
   },
   {
     id: '650e8400-e29b-41d4-a716-446655440008',
@@ -97,7 +327,48 @@ const templates = [
     thumbnail: '/images/templates/online-store.jpg',
     createdAt: '2024-01-22T15:45:00Z',
     updatedAt: '2024-01-22T15:45:00Z',
-    isActive: true
+    isActive: true,
+    components: [
+      {
+        type: 'banner',
+        defaultValues: {
+          headlineText: 'Welcome to Our Online Store',
+          callToAction: {
+            buttonText: 'Shop Now',
+            linkUrl: '#products'
+          },
+          backgroundImageUrl: '',
+          backgroundImageAltText: 'Online store banner'
+        }
+      },
+      {
+        type: 'text',
+        defaultValues: {
+          content: 'Discover amazing products at unbeatable prices. Free shipping on orders over $50!',
+          format: 'html'
+        }
+      },
+      {
+        type: 'linkgroup',
+        defaultValues: {
+          title: 'Quick Links',
+          links: [
+            {
+              text: 'New Arrivals',
+              url: '#new-arrivals'
+            },
+            {
+              text: 'Best Sellers',
+              url: '#best-sellers'
+            },
+            {
+              text: 'Sale Items',
+              url: '#sale'
+            }
+          ]
+        }
+      }
+    ]
   }
 ];
 
@@ -111,7 +382,7 @@ app.use(helmet({
       scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https:", "data:"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://cdn.quilljs.com"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -197,6 +468,23 @@ app.get('/api/templates', (req, res) => {
   }
 });
 
+// GET /api/templates/:id - Get a specific template by ID
+app.get('/api/templates/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const template = templates.find(t => t.id === id);
+    
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    res.json(template);
+  } catch (error) {
+    console.error('Error fetching template:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/templates', (req, res) => {
   // Placeholder for creating templates
   res.json({ message: 'Template created successfully' });
@@ -235,7 +523,6 @@ const pageShareRoutes = require('./src/api/pageShares');
 app.use('/api/pages', pageRoutes);
 app.use('/api/pages', pageVersionRoutes);
 app.use('/api/pages', pageShareRoutes);
-app.use('/api', pageShareRoutes);
 
 // Import and register admin template upload routes
 const adminTemplateUploadRoutes = require('./src/api/adminTemplateUpload');

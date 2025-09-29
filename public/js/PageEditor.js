@@ -25,6 +25,8 @@ class PageEditor {
         // Component references
         this.editingPanel = null;
         this.canvas = null;
+        this.shareButton = null;
+        this.sharePageModal = null;
         
         // Event listeners
         this.eventListeners = new Map();
@@ -61,6 +63,7 @@ class PageEditor {
                         <button class="btn btn-secondary" id="refresh-page" title="Refresh Page">
                             <i class="fas fa-sync-alt"></i>
                         </button>
+                        <div id="share-button-container"></div>
                         <button class="btn btn-primary" id="save-page" title="Save Page" disabled>
                             <i class="fas fa-save"></i>
                             Save
@@ -117,6 +120,83 @@ class PageEditor {
         this.canvas = document.getElementById('page-editor-canvas');
         this.editingPanel = document.getElementById('editing-panel');
         this.errorContainer = document.getElementById('page-editor-error');
+        
+        // Initialize ShareButton and SharePageModal
+        this.initializeShareComponents();
+    }
+
+    /**
+     * Initialize ShareButton and SharePageModal components
+     */
+    initializeShareComponents() {
+        // Initialize ShareButton
+        if (window.ShareButton) {
+            this.shareButton = new window.ShareButton({
+                onClick: () => {
+                    this.handleShareButtonClick();
+                }
+            });
+            
+            // Add ShareButton to the container
+            const shareContainer = document.getElementById('share-button-container');
+            if (shareContainer && this.shareButton.getElement()) {
+                shareContainer.appendChild(this.shareButton.getElement());
+            }
+        } else {
+            console.warn('ShareButton component not available');
+        }
+        
+        // Initialize SharePageModal
+        if (window.SharePageModal) {
+            this.sharePageModal = new window.SharePageModal({
+                onClose: () => {
+                    this.handleShareModalClose();
+                },
+                onShare: (shareType, pageId) => {
+                    this.handleShareAction(shareType, pageId);
+                }
+            });
+        } else {
+            console.warn('SharePageModal component not available');
+        }
+    }
+
+    /**
+     * Handle ShareButton click
+     */
+    handleShareButtonClick() {
+        if (!this.sharePageModal) {
+            console.error('SharePageModal not available');
+            return;
+        }
+        
+        if (!this.pageId) {
+            console.error('No page ID available for sharing');
+            return;
+        }
+        
+        // Show the share modal
+        this.sharePageModal.show(this.pageId);
+    }
+
+    /**
+     * Handle SharePageModal close
+     */
+    handleShareModalClose() {
+        // Modal closed, no additional action needed
+        console.log('Share modal closed');
+    }
+
+    /**
+     * Handle share action from modal
+     * @param {string} shareType - Type of sharing action
+     * @param {string} pageId - Page ID being shared
+     */
+    handleShareAction(shareType, pageId) {
+        console.log(`Share action: ${shareType} for page ${pageId}`);
+        
+        // Emit share event for other components to handle
+        this.emit('pageShare', { shareType, pageId });
     }
 
     /**
@@ -179,6 +259,7 @@ class PageEditor {
         }
 
         this.pageId = pageId;
+        console.log('PageEditor: Setting pageId to:', pageId);
         this.setLoadingState(true);
         this.hideError();
 
@@ -228,11 +309,19 @@ class PageEditor {
      * @returns {Page|PageStateManager} Page instance
      */
     createPageFromData(pageData) {
+        console.log('PageEditor: Creating page from data:', pageData);
+        
         // Use PageStateManager if available, otherwise fallback to Page
         if (window.PageStateManager) {
-            return new PageStateManager(pageData);
+            console.log('PageEditor: Using PageStateManager');
+            const page = new PageStateManager(pageData);
+            console.log('PageEditor: Created PageStateManager with', page.components?.length || 0, 'components');
+            return page;
         } else if (window.Page) {
-            return new Page(pageData);
+            console.log('PageEditor: Using Page class');
+            const page = new Page(pageData);
+            console.log('PageEditor: Created Page with', page.components?.length || 0, 'components');
+            return page;
         } else {
             throw new Error('Neither PageStateManager nor Page class is available');
         }
@@ -243,6 +332,7 @@ class PageEditor {
      */
     renderPage() {
         if (!this.page || !this.canvas) {
+            console.log('PageEditor: Cannot render - missing page or canvas');
             return;
         }
 
@@ -251,8 +341,11 @@ class PageEditor {
 
         // Get ordered components
         const components = this.page.getOrderedComponents();
+        console.log('PageEditor: Rendering page with', components.length, 'components');
+        console.log('PageEditor: Components data:', components);
 
         if (components.length === 0) {
+            console.log('PageEditor: No components found, showing empty page message');
             this.canvas.innerHTML = `
                 <div class="empty-page">
                     <i class="fas fa-file-alt"></i>
@@ -264,10 +357,13 @@ class PageEditor {
         }
 
         // Render each component wrapped in EditableComponent
-        components.forEach(component => {
+        components.forEach((component, index) => {
+            console.log(`PageEditor: Rendering component ${index + 1}:`, component.type, component.id);
             const editableElement = this.createEditableComponent(component);
             this.canvas.appendChild(editableElement);
         });
+
+        console.log('PageEditor: Page rendered successfully with', components.length, 'components');
 
         // Emit page rendered event
         this.emit('pageRendered', { page: this.page, components });
@@ -665,9 +761,8 @@ class PageEditor {
 
             const result = await response.json();
             
-            if (!result.success) {
-                throw new Error(result.error || 'Failed to save page');
-            }
+            // The API returns the page data directly, not wrapped in a success object
+            // So we don't need to check for result.success
 
             // Emit save success event
             this.emit('pageSaved', { page: this.page, pageId: this.pageId });
@@ -756,6 +851,17 @@ class PageEditor {
     destroy() {
         // Clean up event listeners
         this.eventListeners.clear();
+        
+        // Clean up share components
+        if (this.shareButton) {
+            this.shareButton.destroy();
+            this.shareButton = null;
+        }
+        
+        if (this.sharePageModal) {
+            this.sharePageModal.destroy();
+            this.sharePageModal = null;
+        }
         
         // Clear container
         if (this.container) {
