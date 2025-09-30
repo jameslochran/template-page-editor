@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Template Page Editor</title>
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Quill.js Rich Text Editor - Work Order 11 -->
@@ -28,6 +29,38 @@
                         <button class="nav-btn" data-section="templates">
                             <i class="fas fa-folder"></i>
                             Templates
+                        </button>
+                        <button class="nav-btn" data-section="template-browser">
+                            <i class="fas fa-search"></i>
+                            Browse Templates
+                        </button>
+                        <button class="nav-btn" data-section="admin-dashboard">
+                            <i class="fas fa-tools"></i>
+                            Admin Dashboard
+                        </button>
+                        <button class="nav-btn" data-section="admin-categories">
+                            <i class="fas fa-tags"></i>
+                            Categories
+                        </button>
+                        <button class="nav-btn" data-section="template-creation">
+                            <i class="fas fa-plus-circle"></i>
+                            Create Template
+                        </button>
+                        <button class="nav-btn" data-section="template-metadata">
+                            <i class="fas fa-info-circle"></i>
+                            Template Metadata
+                        </button>
+                        <button class="nav-btn" data-section="template-upload-wizard">
+                            <i class="fas fa-upload"></i>
+                            Upload Wizard
+                        </button>
+                        <button class="nav-btn" data-section="png-editor">
+                            <i class="fas fa-image"></i>
+                            PNG Editor
+                        </button>
+                        <button class="nav-btn" data-section="shared-pages">
+                            <i class="fas fa-share-alt"></i>
+                            Shared Pages
                         </button>
                         <button class="nav-btn" data-section="settings">
                             <i class="fas fa-cog"></i>
@@ -81,6 +114,10 @@
                                     <i class="fas fa-edit"></i>
                                     Test PageEditor
                                 </button>
+                                <button class="toolbar-btn" data-action="png-editor">
+                                    <i class="fas fa-image"></i>
+                                    PNG Editor
+                                </button>
                             </div>
                             <div class="toolbar-group">
                                 <button class="toolbar-btn" data-action="preview">
@@ -118,14 +155,87 @@
                 <section id="templates" class="section">
                     <div class="templates-container">
                         <div class="templates-header">
-                            <h2>My Templates</h2>
-                            <button class="btn btn-primary" id="create-template">
-                                <i class="fas fa-plus"></i>
-                                Create New Template
-                            </button>
+                            <div class="templates-header-top">
+                                <h2>My Templates</h2>
+                                <button class="btn btn-primary" id="create-template">
+                                    <i class="fas fa-plus"></i>
+                                    Create New Template
+                                </button>
+                            </div>
+                            <div class="templates-filters">
+                                <div class="search-container">
+                                    <input type="text" id="template-search" placeholder="Search templates..." class="search-input">
+                                    <i class="fas fa-search search-icon"></i>
+                                </div>
+                                <div class="category-filter-container">
+                                    <select id="category-filter" class="category-filter">
+                                        <option value="">All Categories</option>
+                                        <!-- Categories will be populated dynamically -->
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="templates-grid" id="templates-grid">
                             <!-- Templates will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Template Upload Wizard Section -->
+                <section id="template-upload-wizard" class="section">
+                    <div id="template-upload-wizard-container">
+                        <!-- Template Upload Wizard will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- Template Browser Section -->
+                <section id="template-browser" class="section">
+                    <div id="template-browser-container">
+                        <!-- Template Browser Page will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- Admin Dashboard Section -->
+                <section id="admin-dashboard" class="section">
+                    <div id="admin-dashboard-container">
+                        <!-- Admin Templates Dashboard will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- Admin Categories Section -->
+                <section id="admin-categories" class="section">
+                    <div id="admin-categories-container">
+                        <!-- Category management content will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Template Creation Section -->
+                <section id="template-creation" class="section">
+                    <div id="template-creation-container">
+                        <!-- Template Creation Wizard will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- Template Metadata Form Section -->
+                <section id="template-metadata" class="section">
+                    <div id="template-metadata-form-container">
+                        <!-- Template Metadata Form will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- PNG Editor Section -->
+                <section id="png-editor" class="section">
+                    <div id="png-editor-container">
+                        <!-- PNG Region Editor will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- Shared Pages Section -->
+                <section id="shared-pages" class="section">
+                    <div class="shared-pages-container">
+                        <h2>Shared Pages</h2>
+                        <div id="shared-pages-content">
+                            <!-- Content will be loaded dynamically -->
                         </div>
                     </div>
                 </section>
@@ -216,9 +326,62 @@
         
         <!-- Share Components - Work Order 30 -->
         <script src="js/ShareButton.js?v=1.0"></script>
+        
+        <!-- SharedUserRow Component - Work Order 42 -->
+        <script src="js/components/SharedUserRow.js?v=1.0"></script>
         <script src="js/SharePageModal.js?v=1.0"></script>
+        
+        <!-- SharedPagesDashboard Component - Work Order 44 -->
+        <script src="js/SharedPagesDashboard.js?v=1.0"></script>
+        
+        <!-- Template Upload Wizard Components - Work Order 47 -->
+        <script src="js/utils/WizardStateManager.js?v=1.0"></script>
+        <script src="js/TemplateUploadWizard.js?v=1.0"></script>
+        <script src="js/steps/UploadStep.js?v=1.0"></script>
+        <script src="js/steps/PngComponentDefinitionStep.js?v=1.0"></script>
+        <script src="js/steps/MetadataStep.js?v=1.0"></script>
+        <script src="js/steps/SummaryStep.js?v=1.0"></script>
+        <script src="js/steps/CompletionStep.js?v=1.0"></script>
+        
+        <!-- Template Grid Components - Work Order 5 -->
+        <script src="js/TemplateCard.js?v=1.0"></script>
+        <script src="js/TemplateGrid.js?v=1.0"></script>
+        
+        <!-- Template Preview Modal - Work Order 10 -->
+        <script src="js/TemplatePreviewModal.js?v=1.0"></script>
+        
+        <!-- Template Browser Page - Work Order 14 -->
+        <script src="js/TemplateBrowserPage.js?v=1.0"></script>
+        
+        <!-- Admin Templates Dashboard - Work Order 33 -->
+        <script src="js/adminTemplatesDashboard.js?v=1.0"></script>
+        
+        <!-- Template File Upload Component - Work Order 38 -->
+        <script src="js/TemplateFileUploadComponent.js?v=1.0"></script>
+        
+        <!-- Template Creation Wizard - Work Order 38 -->
+        <script src="js/templateCreationWizard.js?v=1.0"></script>
+        <!-- Template Metadata Form Component - Work Order 46 -->
+        <script src="js/admin/TemplateMetadataForm.js?v=1.0"></script>
+        
+        <!-- PNG Editor Components - Work Order 43 -->
+        <script src="js/utils/ComponentTypeRegistry.js?v=1.0"></script>
+        <script src="js/utils/DrawingUtils.js?v=1.0"></script>
+        <script src="js/models/ComponentRegion.js?v=1.0"></script>
+        <script src="js/models/PngTemplate.js?v=1.0"></script>
+        <script src="js/PngRegionEditor.js?v=1.0"></script>
+
+        <!-- Admin Category Manager Scripts -->
+        <script src="js/utils/api.js?v=1.0"></script>
+        <script src="js/adminCategoryManager.js?v=1.0"></script>
     
     <!-- Main Application -->
     <script src="js/app.js?v=1.0"></script>
+    
+    <!-- Template Grid Integration - Must load after app.js -->
+    <script src="js/main.js?v=1.0"></script>
+    
+    <!-- Template Preview Modal Container - Work Order 10 -->
+    <div id="template-preview-modal-container"></div>
 </body>
 </html>

@@ -365,6 +365,177 @@ function getErrorMessage(validationResult) {
 }
 
 /**
+ * Template name validation
+ * @param {string} name - Template name to validate
+ * @returns {ValidationResult} Validation result
+ */
+function validateTemplateName(name) {
+    const result = new ValidationResult(true);
+
+    if (!name) {
+        result.addError('name', 'Template name is required');
+        return result;
+    }
+
+    if (typeof name !== 'string') {
+        result.addError('name', 'Template name must be a string');
+        return result;
+    }
+
+    if (name.trim().length === 0) {
+        result.addError('name', 'Template name cannot be empty');
+    } else if (name.length > 255) {
+        result.addError('name', 'Template name cannot exceed 255 characters');
+    }
+
+    return result;
+}
+
+/**
+ * Template description validation
+ * @param {string} description - Template description to validate
+ * @returns {ValidationResult} Validation result
+ */
+function validateTemplateDescription(description) {
+    const result = new ValidationResult(true);
+
+    if (!description) {
+        result.addError('description', 'Template description is required');
+        return result;
+    }
+
+    if (typeof description !== 'string') {
+        result.addError('description', 'Template description must be a string');
+        return result;
+    }
+
+    if (description.trim().length === 0) {
+        result.addError('description', 'Template description cannot be empty');
+    } else if (description.length > 1000) {
+        result.addError('description', 'Template description cannot exceed 1000 characters');
+    }
+
+    return result;
+}
+
+/**
+ * Category name validation
+ * @param {string} name - Category name to validate
+ * @returns {ValidationResult} Validation result
+ */
+function validateCategoryName(name) {
+    const result = new ValidationResult(true);
+
+    if (!name) {
+        result.addError('name', 'Category name is required');
+        return result;
+    }
+
+    if (typeof name !== 'string') {
+        result.addError('name', 'Category name must be a string');
+        return result;
+    }
+
+    if (name.trim().length === 0) {
+        result.addError('name', 'Category name cannot be empty');
+    } else if (name.length > 100) {
+        result.addError('name', 'Category name cannot exceed 100 characters');
+    }
+
+    return result;
+}
+
+/**
+ * Category description validation
+ * @param {string} description - Category description to validate
+ * @returns {ValidationResult} Validation result
+ */
+function validateCategoryDescription(description) {
+    const result = new ValidationResult(true);
+
+    if (!description) {
+        result.addError('description', 'Category description is required');
+        return result;
+    }
+
+    if (typeof description !== 'string') {
+        result.addError('description', 'Category description must be a string');
+        return result;
+    }
+
+    if (description.trim().length === 0) {
+        result.addError('description', 'Category description cannot be empty');
+    } else if (description.length > 500) {
+        result.addError('description', 'Category description cannot exceed 500 characters');
+    }
+
+    return result;
+}
+
+/**
+ * Template metadata validation
+ * @param {Object} metadata - Template metadata to validate
+ * @returns {ValidationResult} Validation result
+ */
+function validateTemplateMetadata(metadata) {
+    const result = new ValidationResult(true);
+
+    if (!metadata) {
+        result.addError('metadata', 'Template metadata is required');
+        return result;
+    }
+
+    if (typeof metadata !== 'object') {
+        result.addError('metadata', 'Template metadata must be an object');
+        return result;
+    }
+
+    // Validate template name
+    const nameValidation = validateTemplateName(metadata.name);
+    if (!nameValidation.isValid) {
+        result.errors.push(...nameValidation.errors);
+        result.isValid = false;
+    }
+
+    // Validate template description
+    const descriptionValidation = validateTemplateDescription(metadata.description);
+    if (!descriptionValidation.isValid) {
+        result.errors.push(...descriptionValidation.errors);
+        result.isValid = false;
+    }
+
+    // Validate category selection
+    if (!metadata.categoryId && !metadata.newCategory) {
+        result.addError('category', 'Either select an existing category or create a new one');
+    }
+
+    // If creating new category, validate new category data
+    if (metadata.newCategory) {
+        if (typeof metadata.newCategory !== 'object') {
+            result.addError('newCategory', 'New category data must be an object');
+        } else {
+            const newCategoryNameValidation = validateCategoryName(metadata.newCategory.name);
+            if (!newCategoryNameValidation.isValid) {
+                newCategoryNameValidation.errors.forEach(error => {
+                    result.addError(`newCategory.${error.field}`, error.message);
+                });
+                result.isValid = false;
+            }
+
+            const newCategoryDescriptionValidation = validateCategoryDescription(metadata.newCategory.description);
+            if (!newCategoryDescriptionValidation.isValid) {
+                newCategoryDescriptionValidation.errors.forEach(error => {
+                    result.addError(`newCategory.${error.field}`, error.message);
+                });
+                result.isValid = false;
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
  * Get all error messages
  * @param {ValidationResult} validationResult - Validation result
  * @returns {Array<string>} Array of error messages
@@ -382,6 +553,11 @@ window.ValidationUtils = {
     validateAccordionItem,
     validateAccordionData,
     validateCardData,
+    validateTemplateName,
+    validateTemplateDescription,
+    validateCategoryName,
+    validateCategoryDescription,
+    validateTemplateMetadata,
     getErrorMessage,
     getAllErrorMessages
 };

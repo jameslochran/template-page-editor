@@ -15,7 +15,8 @@ const S3_CONFIG = {
     region: process.env.AWS_REGION || 'us-east-1',
     bucket: process.env.S3_BUCKET_NAME || 'template-editor-uploads',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'mock-access-key',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'mock-secret-key'
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'mock-secret-key',
+    useMock: process.env.S3_USE_MOCK !== 'false' // Default to true for development
 };
 
 // Initialize S3 client
@@ -29,6 +30,7 @@ const s3Client = new S3Client({
 
 // Allowed file types and their MIME types
 const ALLOWED_FILE_TYPES = {
+    'fig': ['application/octet-stream', 'application/zip', 'application/x-zip-compressed'],
     'figma': ['application/zip', 'application/x-zip-compressed'],
     'png': ['image/png'],
     'jpg': ['image/jpeg'],
@@ -38,11 +40,12 @@ const ALLOWED_FILE_TYPES = {
 
 // Maximum file sizes (in bytes)
 const MAX_FILE_SIZES = {
-    'figma': 50 * 1024 * 1024, // 50MB
-    'png': 10 * 1024 * 1024,   // 10MB
-    'jpg': 10 * 1024 * 1024,   // 10MB
-    'jpeg': 10 * 1024 * 1024,  // 10MB
-    'webp': 10 * 1024 * 1024   // 10MB
+    'fig': 50 * 1024 * 1024,    // 50MB for Figma files
+    'figma': 50 * 1024 * 1024,  // 50MB
+    'png': 10 * 1024 * 1024,    // 10MB
+    'jpg': 10 * 1024 * 1024,    // 10MB
+    'jpeg': 10 * 1024 * 1024,   // 10MB
+    'webp': 10 * 1024 * 1024    // 10MB
 };
 
 /**
@@ -94,7 +97,21 @@ const generatePresignedUrl = async (fileName, fileType, fileSize, uploadId) => {
         }
         
         // Generate S3 key
-        const s3Key = generateS3Key(uploadId, fileName, fileType);
+        const s3Key = generateS3Key(uploadId, fileName, validation.extension);
+        
+        // Check if we're in mock mode
+        if (S3_CONFIG.accessKeyId === 'mock-access-key') {
+            // Mock mode - return a mock pre-signed URL
+            const mockPresignedUrl = `http://localhost:3000/api/mock-upload/${uploadId}`;
+            console.log('S3 Service: Using mock mode for pre-signed URL generation');
+            
+            return {
+                presignedUrl: mockPresignedUrl,
+                s3Key,
+                bucket: S3_CONFIG.bucket,
+                expiresIn: 3600
+            };
+        }
         
         // Create S3 command
         const command = new PutObjectCommand({
@@ -179,6 +196,13 @@ const verifyUpload = async (s3Key) => {
  * Gets the public URL for an uploaded file
  */
 const getPublicUrl = (s3Key) => {
+    // For development, return a local URL that serves the uploaded file
+    if (S3_CONFIG.useMock) {
+        // Extract the upload ID from the s3Key to create a local URL
+        const uploadId = s3Key.split('/')[2]; // templates/png/{uploadId}/filename
+        return `http://localhost:3000/api/mock-files/${uploadId}`;
+    }
+    
     return `https://${S3_CONFIG.bucket}.s3.${S3_CONFIG.region}.amazonaws.com/${s3Key}`;
 };
 
@@ -194,6 +218,7 @@ module.exports = {
     verifyUpload,
     getPublicUrl,
     generateUploadId,
+    generateS3Key,
     validateFile,
     ALLOWED_FILE_TYPES,
     MAX_FILE_SIZES,

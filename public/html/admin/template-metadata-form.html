@@ -1,0 +1,174 @@
+<!-- Template Metadata Form - Work Order 46 -->
+<div class="template-metadata-form-container">
+    <div class="form-header">
+        <h2 class="form-title">Template Metadata</h2>
+        <p class="form-description">Configure the basic information for your template including name, description, and category assignment.</p>
+    </div>
+
+    <form id="template-metadata-form" class="template-metadata-form" novalidate>
+        <!-- Template Name Field -->
+        <div class="form-group">
+            <label for="template-name" class="form-label required">
+                Template Name
+                <span class="required-indicator">*</span>
+            </label>
+            <input 
+                type="text" 
+                id="template-name" 
+                name="name" 
+                class="form-control" 
+                placeholder="Enter template name"
+                maxlength="255"
+                required
+                autocomplete="off"
+            >
+            <div class="form-feedback" id="template-name-feedback"></div>
+            <div class="form-help">
+                <span class="character-count" id="template-name-count">0</span>/255 characters
+            </div>
+        </div>
+
+        <!-- Template Description Field -->
+        <div class="form-group">
+            <label for="template-description" class="form-label required">
+                Template Description
+                <span class="required-indicator">*</span>
+            </label>
+            <textarea 
+                id="template-description" 
+                name="description" 
+                class="form-control form-textarea" 
+                placeholder="Describe your template and its purpose"
+                maxlength="1000"
+                rows="4"
+                required
+            ></textarea>
+            <div class="form-feedback" id="template-description-feedback"></div>
+            <div class="form-help">
+                <span class="character-count" id="template-description-count">0</span>/1000 characters
+            </div>
+        </div>
+
+        <!-- Category Selection -->
+        <div class="form-group">
+            <label class="form-label required">
+                Category
+                <span class="required-indicator">*</span>
+            </label>
+            
+            <!-- Category Selection Options -->
+            <div class="category-selection">
+                <div class="category-option">
+                    <input 
+                        type="radio" 
+                        id="existing-category" 
+                        name="category-type" 
+                        value="existing" 
+                        class="form-radio"
+                        checked
+                    >
+                    <label for="existing-category" class="form-radio-label">
+                        Use existing category
+                    </label>
+                </div>
+                
+                <div class="category-option">
+                    <input 
+                        type="radio" 
+                        id="new-category" 
+                        name="category-type" 
+                        value="new" 
+                        class="form-radio"
+                    >
+                    <label for="new-category" class="form-radio-label">
+                        Create new category
+                    </label>
+                </div>
+            </div>
+
+            <!-- Existing Category Dropdown -->
+            <div class="category-dropdown-container" id="existing-category-container">
+                <select 
+                    id="category-select" 
+                    name="categoryId" 
+                    class="form-control form-select"
+                >
+                    <option value="">Select a category...</option>
+                </select>
+                <div class="form-feedback" id="category-select-feedback"></div>
+            </div>
+
+            <!-- New Category Fields -->
+            <div class="new-category-container" id="new-category-container" style="display: none;">
+                <div class="new-category-fields">
+                    <div class="form-group">
+                        <label for="new-category-name" class="form-label required">
+                            Category Name
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="new-category-name" 
+                            name="newCategoryName" 
+                            class="form-control" 
+                            placeholder="Enter category name"
+                            maxlength="100"
+                            autocomplete="off"
+                        >
+                        <div class="form-feedback" id="new-category-name-feedback"></div>
+                        <div class="form-help">
+                            <span class="character-count" id="new-category-name-count">0</span>/100 characters
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new-category-description" class="form-label required">
+                            Category Description
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <textarea 
+                            id="new-category-description" 
+                            name="newCategoryDescription" 
+                            class="form-control form-textarea" 
+                            placeholder="Describe this category"
+                            maxlength="500"
+                            rows="3"
+                        ></textarea>
+                        <div class="form-feedback" id="new-category-description-feedback"></div>
+                        <div class="form-help">
+                            <span class="character-count" id="new-category-description-count">0</span>/500 characters
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button 
+                type="button" 
+                id="cancel-button" 
+                class="btn btn-secondary"
+            >
+                Cancel
+            </button>
+            <button 
+                type="submit" 
+                id="save-button" 
+                class="btn btn-primary"
+                disabled
+            >
+                <span class="btn-text">Save Template</span>
+                <span class="btn-loading" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Saving...
+                </span>
+            </button>
+        </div>
+    </form>
+
+    <!-- Success/Error Messages -->
+    <div class="form-messages" id="form-messages" style="display: none;">
+        <div class="message-content"></div>
+    </div>
+</div>

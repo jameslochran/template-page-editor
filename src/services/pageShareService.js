@@ -71,10 +71,26 @@ class PageShareService {
             name: 'Bob Johnson',
             createdAt: new Date().toISOString()
         };
+        
+        const user4 = {
+            id: '550e8400-e29b-41d4-a716-446655440013',
+            email: 'alice.brown@example.com',
+            name: 'Alice Brown',
+            createdAt: new Date().toISOString()
+        };
+        
+        const user5 = {
+            id: '550e8400-e29b-41d4-a716-446655440014',
+            email: 'charlie.wilson@example.com',
+            name: 'Charlie Wilson',
+            createdAt: new Date().toISOString()
+        };
 
         this.users.set(user1.id, user1);
         this.users.set(user2.id, user2);
         this.users.set(user3.id, user3);
+        this.users.set(user4.id, user4);
+        this.users.set(user5.id, user5);
 
         // Sample page shares
         const share1 = PageShare.create(

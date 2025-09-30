@@ -104,7 +104,11 @@ router.post('/:pageId/share', authenticateUser, validatePageId, async (req, res)
             req
         );
         
-        res.status(201).json(result);
+        res.status(201).json({
+            success: true,
+            data: result,
+            message: 'Page share created successfully'
+        });
     } catch (error) {
         console.error(`Error creating page share for page ${req.params.pageId}:`, error);
         
@@ -228,7 +232,11 @@ router.get('/:pageId/share', authenticateUser, validatePageId, async (req, res) 
         
         const shares = await pageShareController.getPageShares(pageId, requestingUserId, req);
         
-        res.json(shares);
+        res.json({
+            success: true,
+            data: shares,
+            message: 'Page shares retrieved successfully'
+        });
     } catch (error) {
         console.error(`Error fetching shares for page ${req.params.pageId}:`, error);
         

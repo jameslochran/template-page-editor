@@ -21,4 +21,7 @@ router.get('/', adminTemplateController.getAllTemplates);
 // DELETE /api/admin/templates/:templateId - Delete a template
 router.delete('/:templateId', adminTemplateController.deleteTemplate);
 
+// POST /api/admin/templates/wizard - Create template via wizard
+router.post('/wizard', adminTemplateController.createTemplateFromWizard);
+
 module.exports = router;

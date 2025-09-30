@@ -142,6 +142,8 @@ const sanitizeTemplateResponse = (template) => {
         name: template.name,
         description: template.description,
         categoryId: template.categoryId,
+        categoryName: template.categoryName, // Include enriched category name
+        fileType: template.fileType, // Include file type information
         previewImageUrl: template.previewImageUrl,
         components: template.components,
         createdAt: template.createdAt,

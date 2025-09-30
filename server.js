@@ -33,7 +33,6 @@ const templates = [
     name: 'Modern Business Homepage',
     description: 'A clean and professional business homepage template with hero section, services, and contact information.',
     categoryId: '550e8400-e29b-41d4-a716-446655440001',
-    thumbnail: '/images/templates/business-homepage.jpg',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T10:00:00Z',
     isActive: true,
@@ -76,7 +75,6 @@ const templates = [
     name: 'E-commerce Product Showcase',
     description: 'A responsive e-commerce template featuring product grids, shopping cart, and checkout flow.',
     categoryId: '550e8400-e29b-41d4-a716-446655440002',
-    thumbnail: '/images/templates/ecommerce-showcase.jpg',
     createdAt: '2024-01-16T14:30:00Z',
     updatedAt: '2024-01-16T14:30:00Z',
     isActive: true,
@@ -120,7 +118,6 @@ const templates = [
     name: 'Creative Portfolio Landing',
     description: 'A stunning portfolio template perfect for designers, photographers, and creative professionals.',
     categoryId: '550e8400-e29b-41d4-a716-446655440004',
-    thumbnail: '/images/templates/portfolio-landing.jpg',
     createdAt: '2024-01-17T09:15:00Z',
     updatedAt: '2024-01-17T09:15:00Z',
     isActive: true,
@@ -160,7 +157,6 @@ const templates = [
     name: 'Corporate About Page',
     description: 'Professional corporate about page template with team section, company history, and values.',
     categoryId: '550e8400-e29b-41d4-a716-446655440006',
-    thumbnail: '/images/templates/corporate-about.jpg',
     createdAt: '2024-01-18T11:45:00Z',
     updatedAt: '2024-01-18T11:45:00Z',
     isActive: true,
@@ -207,7 +203,6 @@ const templates = [
     name: 'Blog Article Layout',
     description: 'Clean and readable blog template with article layout, sidebar, and comment section.',
     categoryId: '550e8400-e29b-41d4-a716-446655440005',
-    thumbnail: '/images/templates/blog-article.jpg',
     createdAt: '2024-01-19T16:20:00Z',
     updatedAt: '2024-01-19T16:20:00Z',
     isActive: true,
@@ -242,7 +237,6 @@ const templates = [
     name: 'SaaS Landing Page',
     description: 'High-converting SaaS landing page template with pricing tables, testimonials, and CTA sections.',
     categoryId: '550e8400-e29b-41d4-a716-446655440003',
-    thumbnail: '/images/templates/saas-landing.jpg',
     createdAt: '2024-01-20T13:10:00Z',
     updatedAt: '2024-01-20T13:10:00Z',
     isActive: true,
@@ -281,7 +275,6 @@ const templates = [
     name: 'Restaurant Menu Page',
     description: 'Appetizing restaurant template featuring menu display, location info, and reservation form.',
     categoryId: '550e8400-e29b-41d4-a716-446655440001',
-    thumbnail: '/images/templates/restaurant-menu.jpg',
     createdAt: '2024-01-21T08:30:00Z',
     updatedAt: '2024-01-21T08:30:00Z',
     isActive: true,
@@ -324,7 +317,6 @@ const templates = [
     name: 'Online Store Homepage',
     description: 'Complete online store template with featured products, categories, and promotional banners.',
     categoryId: '550e8400-e29b-41d4-a716-446655440002',
-    thumbnail: '/images/templates/online-store.jpg',
     createdAt: '2024-01-22T15:45:00Z',
     updatedAt: '2024-01-22T15:45:00Z',
     isActive: true,
@@ -410,7 +402,7 @@ app.get('/api/health', (req, res) => {
 // API routes for template management
 app.get('/api/templates', (req, res) => {
   try {
-    const { categoryId, keyword, sortBy = 'name' } = req.query;
+    const { categoryId, category, keyword, search, sortBy = 'name' } = req.query;
     
     // Validate sortBy parameter
     const validSortFields = ['name', 'description', 'createdAt', 'updatedAt'];
@@ -430,19 +422,21 @@ app.get('/api/templates', (req, res) => {
     
     let filteredTemplates = [...templates];
     
-    // Filter by categoryId if provided
-    if (categoryId) {
+    // Filter by categoryId or category if provided
+    const filterCategoryId = categoryId || category;
+    if (filterCategoryId) {
       filteredTemplates = filteredTemplates.filter(template => 
-        template.categoryId === categoryId
+        template.categoryId === filterCategoryId
       );
     }
     
-    // Search by keyword if provided
-    if (keyword) {
-      const searchTerm = keyword.toLowerCase();
+    // Search by keyword or search if provided
+    const searchTerm = keyword || search;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filteredTemplates = filteredTemplates.filter(template => 
-        template.name.toLowerCase().includes(searchTerm) ||
-        template.description.toLowerCase().includes(searchTerm)
+        template.name.toLowerCase().includes(searchLower) ||
+        template.description.toLowerCase().includes(searchLower)
       );
     }
     
@@ -486,18 +480,106 @@ app.get('/api/templates/:id', (req, res) => {
 });
 
 app.post('/api/templates', (req, res) => {
-  // Placeholder for creating templates
-  res.json({ message: 'Template created successfully' });
+  try {
+    const { name, description, categoryId, components } = req.body;
+    
+    // Validate required fields
+    if (!name || !description || !categoryId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: name, description, categoryId' 
+      });
+    }
+    
+    // Validate categoryId exists
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) {
+      return res.status(400).json({ 
+        error: 'Invalid categoryId. Category not found.' 
+      });
+    }
+    
+    // Create new template
+    const newTemplate = {
+      id: `650e8400-e29b-41d4-a716-446655440${Date.now().toString().slice(-3)}`,
+      name,
+      description,
+      categoryId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isActive: true,
+      components: components || []
+    };
+    
+    templates.push(newTemplate);
+    
+    res.status(201).json(newTemplate);
+  } catch (error) {
+    console.error('Error creating template:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.put('/api/templates/:id', (req, res) => {
-  // Placeholder for updating templates
-  res.json({ message: 'Template updated successfully' });
+  try {
+    const { id } = req.params;
+    const { name, description, categoryId, components } = req.body;
+    
+    // Find template
+    const templateIndex = templates.findIndex(t => t.id === id);
+    if (templateIndex === -1) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    // Validate categoryId if provided
+    if (categoryId) {
+      const category = categories.find(c => c.id === categoryId);
+      if (!category) {
+        return res.status(400).json({ 
+          error: 'Invalid categoryId. Category not found.' 
+        });
+      }
+    }
+    
+    // Update template
+    const updatedTemplate = {
+      ...templates[templateIndex],
+      ...(name && { name }),
+      ...(description && { description }),
+      ...(categoryId && { categoryId }),
+      ...(components && { components }),
+      updatedAt: new Date().toISOString()
+    };
+    
+    templates[templateIndex] = updatedTemplate;
+    
+    res.json(updatedTemplate);
+  } catch (error) {
+    console.error('Error updating template:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.delete('/api/templates/:id', (req, res) => {
-  // Placeholder for deleting templates
-  res.json({ message: 'Template deleted successfully' });
+  try {
+    const { id } = req.params;
+    
+    // Find template
+    const templateIndex = templates.findIndex(t => t.id === id);
+    if (templateIndex === -1) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    // Remove template
+    const deletedTemplate = templates.splice(templateIndex, 1)[0];
+    
+    res.json({ 
+      message: 'Template deleted successfully',
+      deletedTemplate 
+    });
+  } catch (error) {
+    console.error('Error deleting template:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // API route for getting categories
@@ -522,7 +604,7 @@ const pageVersionRoutes = require('./src/api/pageVersions');
 const pageShareRoutes = require('./src/api/pageShares');
 app.use('/api/pages', pageRoutes);
 app.use('/api/pages', pageVersionRoutes);
-app.use('/api/pages', pageShareRoutes);
+app.use('/api', pageShareRoutes);
 
 // Import and register admin template upload routes
 const adminTemplateUploadRoutes = require('./src/api/adminTemplateUpload');
@@ -535,6 +617,107 @@ const imageUploadRoutes = require('./src/api/imageUpload');
 app.use('/api/admin/templates', adminTemplateCrudRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/images', imageUploadRoutes);
+
+// Mock upload endpoint for development/testing
+app.put('/api/mock-upload/:uploadId', (req, res) => {
+    const { uploadId } = req.params;
+    console.log(`Mock upload endpoint called for upload ID: ${uploadId}`);
+    
+    // Simulate successful upload
+    res.status(200).json({
+        success: true,
+        message: 'Mock upload successful',
+        uploadId: uploadId,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Mock file serving endpoint for development
+app.get('/api/mock-files/:uploadId', (req, res) => {
+    const { uploadId } = req.params;
+    
+    // For development, serve a placeholder image
+    // In a real implementation, this would serve the actual uploaded file
+    const placeholderSvg = `
+        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+            <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">
+                Uploaded Template
+            </text>
+            <text x="200" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af">
+                Upload ID: ${uploadId}
+            </text>
+            <text x="200" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af">
+                (Mock Development Image)
+            </text>
+        </svg>
+    `;
+    
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(placeholderSvg);
+});
+
+// User search API endpoint for sharing functionality
+app.get('/api/users/search', (req, res) => {
+    const { q } = req.query;
+    
+    if (!q || q.trim().length < 2) {
+        return res.json({
+            success: true,
+            data: [],
+            message: 'Search query must be at least 2 characters'
+        });
+    }
+    
+    // Mock user data for search
+    const mockUsers = [
+        {
+            id: '550e8400-e29b-41d4-a716-446655440010',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            avatar: null
+        },
+        {
+            id: '550e8400-e29b-41d4-a716-446655440011',
+            name: 'Jane Smith',
+            email: 'jane.smith@example.com',
+            avatar: null
+        },
+        {
+            id: '550e8400-e29b-41d4-a716-446655440012',
+            name: 'Bob Johnson',
+            email: 'bob.johnson@example.com',
+            avatar: null
+        },
+        {
+            id: '550e8400-e29b-41d4-a716-446655440013',
+            name: 'Alice Brown',
+            email: 'alice.brown@example.com',
+            avatar: null
+        },
+        {
+            id: '550e8400-e29b-41d4-a716-446655440014',
+            name: 'Charlie Wilson',
+            email: 'charlie.wilson@example.com',
+            avatar: null
+        }
+    ];
+    
+    // Filter users based on search query
+    const searchTerm = q.toLowerCase().trim();
+    const filteredUsers = mockUsers.filter(user => 
+        user.name.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+    );
+    
+    res.json({
+        success: true,
+        data: filteredUsers,
+        query: q,
+        count: filteredUsers.length
+    });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

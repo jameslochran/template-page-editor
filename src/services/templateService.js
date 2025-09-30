@@ -39,33 +39,83 @@ class TemplateService {
         this.categories.set(category1.id, category1);
         this.categories.set(category2.id, category2);
 
-        // Sample template
+        // Sample templates with different file types
         const template1 = {
             id: '750e8400-e29b-41d4-a716-446655440001',
-            name: 'Sample Template',
-            description: 'A sample template for testing',
+            name: 'Modern Landing Page',
+            description: 'A clean and modern landing page template with hero section and features',
             categoryId: category1.id,
-            previewImageUrl: 'https://example.com/preview1.png',
+            previewImageUrl: 'https://example.com/landing-page.png',
             components: [
                 {
                     id: 'comp1',
-                    type: 'TextComponent',
-                    content: 'Sample text content',
-                    styles: { fontSize: '16px', color: '#333' }
+                    type: 'BannerComponent',
+                    title: 'Welcome to Our Platform',
+                    subtitle: 'Build amazing experiences',
+                    backgroundImage: 'https://example.com/hero-bg.jpg'
                 },
                 {
                     id: 'comp2',
-                    type: 'BannerComponent',
-                    title: 'Sample Banner',
-                    subtitle: 'Sample subtitle',
-                    backgroundImage: 'https://example.com/banner.jpg'
+                    type: 'TextComponent',
+                    content: 'Discover our features and start building today',
+                    styles: { fontSize: '18px', color: '#333' }
                 }
             ],
             createdAt: new Date(),
             updatedAt: new Date()
         };
 
+        const template2 = {
+            id: '750e8400-e29b-41d4-a716-446655440002',
+            name: 'E-commerce Product Page',
+            description: 'Complete product showcase template with image gallery and purchase options',
+            categoryId: category2.id,
+            previewImageUrl: 'https://example.com/product-page.fig',
+            components: [
+                {
+                    id: 'comp1',
+                    type: 'ImageComponent',
+                    src: 'https://example.com/product-image.jpg',
+                    alt: 'Product Image'
+                },
+                {
+                    id: 'comp2',
+                    type: 'TextComponent',
+                    content: 'Premium Quality Product',
+                    styles: { fontSize: '24px', fontWeight: 'bold' }
+                }
+            ],
+            createdAt: new Date(Date.now() - 86400000), // 1 day ago
+            updatedAt: new Date(Date.now() - 86400000)
+        };
+
+        const template3 = {
+            id: '750e8400-e29b-41d4-a716-446655440003',
+            name: 'Blog Article Layout',
+            description: 'Professional blog article template with typography and reading experience',
+            categoryId: category1.id,
+            previewImageUrl: 'https://example.com/blog-article.png',
+            components: [
+                {
+                    id: 'comp1',
+                    type: 'TextComponent',
+                    content: 'Article Title',
+                    styles: { fontSize: '32px', fontWeight: 'bold', color: '#1a1a1a' }
+                },
+                {
+                    id: 'comp2',
+                    type: 'TextComponent',
+                    content: 'Article content goes here...',
+                    styles: { fontSize: '16px', lineHeight: '1.6' }
+                }
+            ],
+            createdAt: new Date(Date.now() - 172800000), // 2 days ago
+            updatedAt: new Date(Date.now() - 172800000)
+        };
+
         this.templates.set(template1.id, template1);
+        this.templates.set(template2.id, template2);
+        this.templates.set(template3.id, template3);
     }
 
     /**
@@ -235,7 +285,7 @@ class TemplateService {
     /**
      * Get template by ID
      * @param {string} templateId - Template ID
-     * @returns {Object|null} Template or null if not found
+     * @returns {Object|null} Template with enriched data or null if not found
      */
     async getTemplateById(templateId) {
         if (!isValidUUID(templateId)) {
@@ -243,15 +293,77 @@ class TemplateService {
         }
 
         const template = this.templates.get(templateId);
-        return template ? { ...template } : null;
+        if (!template) {
+            return null;
+        }
+
+        const enrichedTemplate = { ...template };
+        
+        // Add category name
+        const category = this.categories.get(template.categoryId);
+        if (category) {
+            enrichedTemplate.categoryName = category.name;
+        } else {
+            enrichedTemplate.categoryName = 'Unknown Category';
+        }
+        
+        // Add file type information
+        enrichedTemplate.fileType = this.determineFileType(template);
+        
+        return enrichedTemplate;
     }
 
     /**
      * Get all templates
-     * @returns {Array} Array of templates
+     * @returns {Array} Array of templates with enriched category data
      */
     async getAllTemplates() {
-        return Array.from(this.templates.values()).map(template => ({ ...template }));
+        return Array.from(this.templates.values()).map(template => {
+            const enrichedTemplate = { ...template };
+            
+            // Add category name
+            const category = this.categories.get(template.categoryId);
+            if (category) {
+                enrichedTemplate.categoryName = category.name;
+            } else {
+                enrichedTemplate.categoryName = 'Unknown Category';
+            }
+            
+            // Add file type information
+            enrichedTemplate.fileType = this.determineFileType(template);
+            
+            return enrichedTemplate;
+        });
+    }
+
+    /**
+     * Determine file type based on template data
+     * @param {Object} template - Template object
+     * @returns {string} File type (Figma, PNG, etc.)
+     */
+    determineFileType(template) {
+        // Check preview image URL for file extension
+        if (template.previewImageUrl) {
+            const extension = template.previewImageUrl.split('.').pop().toLowerCase();
+            if (extension === 'fig' || extension === 'figma') {
+                return 'Figma';
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
+                return 'PNG';
+            }
+        }
+        
+        // Check if template has Figma-specific components or metadata
+        if (template.components && Array.isArray(template.components)) {
+            const hasFigmaComponents = template.components.some(component => 
+                component.type && component.type.toLowerCase().includes('figma')
+            );
+            if (hasFigmaComponents) {
+                return 'Figma';
+            }
+        }
+        
+        // Default to PNG if we can't determine
+        return 'PNG';
     }
 
     /**
@@ -287,6 +399,90 @@ class TemplateService {
         }
 
         return this.templates.delete(templateId);
+    }
+
+    /**
+     * Create template from wizard
+     * @param {Object} templateData - Template data from wizard
+     * @returns {Object} Created template
+     */
+    async createTemplateFromWizard(templateData) {
+        const { name, description, categoryId, previewImageUrl, components, createdBy, source } = templateData;
+
+        // Validate category exists
+        if (!this.categories.has(categoryId)) {
+            const error = new Error('Category not found');
+            error.code = 'CATEGORY_NOT_FOUND';
+            throw error;
+        }
+
+        // Check if template name already exists
+        const existingTemplate = Array.from(this.templates.values())
+            .find(template => template.name.toLowerCase() === name.toLowerCase());
+        
+        if (existingTemplate) {
+            const error = new Error('Template name already exists');
+            error.code = 'TEMPLATE_NAME_EXISTS';
+            throw error;
+        }
+
+        // Create new template
+        const templateId = uuidv4();
+        const now = new Date();
+        
+        const newTemplate = {
+            id: templateId,
+            name: name.trim(),
+            description: description.trim(),
+            categoryId,
+            previewImageUrl,
+            components: components || [],
+            createdBy: createdBy || 'system',
+            source: source || 'wizard',
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+            tags: [], // Tags can be added later
+            metadata: {
+                fileType: this.detectFileType(previewImageUrl),
+                componentCount: components ? components.length : 0,
+                createdVia: 'wizard'
+            }
+        };
+
+        // Store template
+        this.templates.set(templateId, newTemplate);
+
+        console.log(`Template created from wizard: ${templateId} - ${name}`);
+        
+        return newTemplate;
+    }
+
+    /**
+     * Detect file type from URL
+     * @param {string} url - File URL
+     * @returns {string} File type
+     */
+    detectFileType(url) {
+        if (!url) return 'unknown';
+        
+        const extension = url.split('.').pop().toLowerCase();
+        
+        switch (extension) {
+            case 'png':
+            case 'jpg':
+            case 'jpeg':
+            case 'gif':
+            case 'webp':
+                return 'image';
+            case 'fig':
+                return 'figma';
+            case 'svg':
+                return 'vector';
+            default:
+                return 'unknown';
+        }
     }
 }
 

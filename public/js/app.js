@@ -19,6 +19,22 @@ class TemplatePageEditor {
         this.saveButton = null; // SaveButton instance
         this.saveVersionModal = null; // SaveVersionModal instance
         this.versionHistoryManager = null; // VersionHistoryManager instance
+        this.templateBrowserPage = null; // TemplateBrowserPage instance
+        this.adminDashboard = null; // AdminTemplatesDashboard instance
+        this.adminCategoryManager = null; // AdminCategoryManager instance
+        this.templateCreationWizard = null; // TemplateCreationWizard instance
+        this.templateMetadataForm = null; // TemplateMetadataForm instance
+        this.pngRegionEditor = null; // PngRegionEditor instance
+        this.sharedPagesDashboard = null; // SharedPagesDashboard instance
+        this.templateUploadWizard = null; // TemplateUploadWizard instance
+        this.wizardStateManager = null; // WizardStateManager instance
+        
+        // Search and filter state
+        this.currentSearchQuery = '';
+        this.currentCategoryFilter = '';
+        this.categories = [];
+        this.searchDebounceTimer = null;
+        
         this.init();
     }
 
@@ -30,6 +46,7 @@ class TemplatePageEditor {
         this.setupUnsavedChangesWarning();
         this.initializeSaveVersionComponents();
         this.initializeVersionHistoryManager();
+        this.loadCategories();
     }
 
     setupEventListeners() {
@@ -82,13 +99,373 @@ class TemplatePageEditor {
                 this.loadTemplate(templateId, templateType);
             } else if (e.target.matches('[data-action="delete-template"]')) {
                 const templateId = e.target.dataset.templateId;
-                this.deleteTemplate(templateId);
+                const templateType = e.target.dataset.templateType || 'local';
+                this.deleteTemplate(templateId, templateType);
             }
         });
 
         // Save version request event
         document.addEventListener('saveVersionRequested', (e) => {
             this.handleSaveVersionRequest();
+        });
+    }
+
+    setupSearchAndFilter() {
+        // Check if already set up
+        if (this.searchAndFilterSetup) {
+            return;
+        }
+
+        // Search input event listener
+        const searchInput = document.getElementById('template-search');
+        console.log('Setting up search input:', searchInput);
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                console.log('Search input changed:', e.target.value);
+                this.handleSearchInput(e.target.value);
+            });
+        }
+
+        // Category filter event listener
+        const categoryFilter = document.getElementById('category-filter');
+        console.log('Setting up category filter:', categoryFilter);
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', (e) => {
+                console.log('Category filter changed:', e.target.value);
+                this.handleCategoryFilter(e.target.value);
+            });
+        }
+
+        this.searchAndFilterSetup = true;
+    }
+
+    // Debounce utility function
+    debounce(func, wait) {
+        return (...args) => {
+            clearTimeout(this.searchDebounceTimer);
+            this.searchDebounceTimer = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    handleSearchInput(query) {
+        console.log('handleSearchInput called with:', query);
+        this.currentSearchQuery = query;
+        this.saveFilterState();
+        this.debouncedLoadTemplates();
+    }
+
+    handleCategoryFilter(categoryId) {
+        console.log('handleCategoryFilter called with:', categoryId);
+        this.currentCategoryFilter = categoryId;
+        this.saveFilterState();
+        this.loadTemplates();
+    }
+
+    // Debounced version of loadTemplates for search
+    debouncedLoadTemplates = this.debounce(this.loadTemplates.bind(this), 300);
+
+    saveFilterState() {
+        sessionStorage.setItem('templatePageEditor_searchQuery', this.currentSearchQuery);
+        sessionStorage.setItem('templatePageEditor_categoryFilter', this.currentCategoryFilter);
+    }
+
+    loadFilterState() {
+        this.currentSearchQuery = sessionStorage.getItem('templatePageEditor_searchQuery') || '';
+        this.currentCategoryFilter = sessionStorage.getItem('templatePageEditor_categoryFilter') || '';
+        
+        // Restore UI state
+        const searchInput = document.getElementById('template-search');
+        if (searchInput) {
+            searchInput.value = this.currentSearchQuery;
+        }
+        
+        const categoryFilter = document.getElementById('category-filter');
+        if (categoryFilter) {
+            categoryFilter.value = this.currentCategoryFilter;
+        }
+    }
+
+    initializeTemplateBrowser() {
+        // Check if TemplateBrowserPage is already initialized
+        if (this.templateBrowserPage) {
+            return;
+        }
+
+        // Initialize TemplateBrowserPage
+        if (window.TemplateBrowserPage) {
+            const container = document.getElementById('template-browser-container');
+            if (container) {
+                this.templateBrowserPage = new TemplateBrowserPage('template-browser-container');
+                console.log('TemplateBrowserPage initialized');
+            }
+        } else {
+            console.warn('TemplateBrowserPage class not available');
+        }
+    }
+
+    initializeAdminDashboard() {
+        // Check if AdminTemplatesDashboard is already initialized
+        if (this.adminDashboard) {
+            return;
+        }
+
+        // Initialize AdminTemplatesDashboard
+        if (window.AdminTemplatesDashboard) {
+            const container = document.getElementById('admin-dashboard-container');
+            if (container) {
+                this.adminDashboard = new AdminTemplatesDashboard('admin-dashboard-container');
+                console.log('AdminTemplatesDashboard initialized');
+            }
+        } else {
+            console.warn('AdminTemplatesDashboard class not available');
+        }
+
+        // Initialize AdminCategoryManager
+        if (window.AdminCategoryManager) {
+            const container = document.getElementById('admin-categories-container');
+            if (container) {
+                this.adminCategoryManager = new AdminCategoryManager('admin-categories-container');
+                console.log('AdminCategoryManager initialized');
+            }
+        } else {
+            console.warn('AdminCategoryManager class not available');
+        }
+    }
+
+    initializeAdminCategoryManager() {
+        // Check if AdminCategoryManager is already initialized
+        if (this.adminCategoryManager) {
+            return;
+        }
+
+        // Initialize AdminCategoryManager
+        if (window.AdminCategoryManager) {
+            const container = document.getElementById('admin-categories-container');
+            if (container) {
+                this.adminCategoryManager = new AdminCategoryManager('admin-categories-container');
+                console.log('AdminCategoryManager initialized');
+            }
+        } else {
+            console.warn('AdminCategoryManager class not available');
+        }
+    }
+
+    initializeTemplateCreationWizard() {
+        // Check if TemplateCreationWizard is already initialized
+        if (this.templateCreationWizard) {
+            return;
+        }
+
+        // Initialize TemplateCreationWizard
+        if (window.TemplateCreationWizard) {
+            const container = document.getElementById('template-creation-container');
+            if (container) {
+                this.templateCreationWizard = new TemplateCreationWizard('template-creation-container', {
+                    onWizardComplete: (templateData) => {
+                        console.log('Template created successfully:', templateData);
+                        // Switch to templates section to show the new template
+                        this.switchSection('templates');
+                        // Refresh templates list
+                        this.loadTemplates();
+                    },
+                    onWizardCancel: () => {
+                        console.log('Template creation cancelled');
+                        // Switch back to admin dashboard
+                        this.switchSection('admin-dashboard');
+                    }
+                });
+                console.log('TemplateCreationWizard initialized');
+            }
+        } else {
+            console.warn('TemplateCreationWizard class not available');
+        }
+    }
+
+    initializeTemplateMetadataForm() {
+        // Check if TemplateMetadataForm is already initialized
+        if (this.templateMetadataForm) {
+            return;
+        }
+
+        // Initialize TemplateMetadataForm
+        if (window.TemplateMetadataForm) {
+            const container = document.getElementById('template-metadata-form-container');
+            if (container) {
+                this.templateMetadataForm = new TemplateMetadataForm('template-metadata-form-container', {
+                    onSave: (templateData) => {
+                        console.log('Template metadata saved:', templateData);
+                        // Here you could navigate to another section or show success message
+                        alert('Template metadata saved successfully!');
+                    },
+                    onCancel: () => {
+                        console.log('Template metadata form cancelled');
+                        // Here you could navigate back to admin dashboard
+                        this.switchSection('admin-dashboard');
+                    },
+                    onError: (error) => {
+                        console.error('Template metadata form error:', error);
+                        // Error handling is already done in the form component
+                    }
+                });
+                console.log('TemplateMetadataForm initialized');
+            }
+        } else {
+            console.warn('TemplateMetadataForm class not available');
+        }
+    }
+
+    initializePngRegionEditor() {
+        // Check if PngRegionEditor is already initialized
+        if (this.pngRegionEditor) {
+            return;
+        }
+
+        // Initialize PngRegionEditor
+        if (window.PngRegionEditor) {
+            const container = document.getElementById('png-editor-container');
+            if (container) {
+                this.pngRegionEditor = new PngRegionEditor('png-editor-container', {
+                    onRegionAdded: (region) => {
+                        console.log('Region added:', region);
+                    },
+                    onRegionUpdated: (region) => {
+                        console.log('Region updated:', region);
+                    },
+                    onRegionDeleted: (regionId) => {
+                        console.log('Region deleted:', regionId);
+                    },
+                    onTemplateSaved: (template) => {
+                        console.log('Template saved:', template);
+                        // Here you could save to backend or show success message
+                        alert('PNG template saved successfully!');
+                    }
+                });
+                console.log('PngRegionEditor initialized');
+            }
+        } else {
+            console.warn('PngRegionEditor class not available');
+        }
+    }
+
+    initializeSharedPagesDashboard() {
+        // Check if SharedPagesDashboard is already initialized
+        if (this.sharedPagesDashboard) {
+            return;
+        }
+
+        // Initialize SharedPagesDashboard
+        if (window.SharedPagesDashboard) {
+            this.sharedPagesDashboard = new SharedPagesDashboard({
+                containerId: 'shared-pages-content',
+                onPageClick: (pageId, permission) => {
+                    console.log('Opening shared page:', pageId, 'with permission:', permission);
+                    this.loadPage(pageId);
+                }
+            });
+            console.log('SharedPagesDashboard initialized');
+        } else {
+            console.warn('SharedPagesDashboard class not available');
+        }
+    }
+
+    initializeTemplateUploadWizard() {
+        // Check if TemplateUploadWizard is already initialized
+        if (this.templateUploadWizard) {
+            return;
+        }
+
+        // Initialize WizardStateManager if not already done
+        if (!this.wizardStateManager && window.WizardStateManager) {
+            this.wizardStateManager = new WizardStateManager({
+                // Initial state
+                currentStep: 'upload',
+                uploadData: null,
+                components: [],
+                metadata: {},
+                isComplete: false
+            });
+        }
+
+        // Initialize TemplateUploadWizard
+        if (window.TemplateUploadWizard && this.wizardStateManager) {
+            this.templateUploadWizard = new TemplateUploadWizard('template-upload-wizard-container', {
+                stateManager: this.wizardStateManager,
+                steps: [
+                    {
+                        id: 'upload',
+                        title: 'Upload File',
+                        componentClass: 'UploadStep',
+                        isConditional: false
+                    },
+                    {
+                        id: 'png-components',
+                        title: 'Define Components',
+                        componentClass: 'PngComponentDefinitionStep',
+                        isConditional: true // Only show for PNG files
+                    },
+                    {
+                        id: 'metadata',
+                        title: 'Template Info',
+                        componentClass: 'MetadataStep',
+                        isConditional: false
+                    },
+                    {
+                        id: 'summary',
+                        title: 'Review',
+                        componentClass: 'SummaryStep',
+                        isConditional: false
+                    },
+                    {
+                        id: 'completion',
+                        title: 'Complete',
+                        componentClass: 'CompletionStep',
+                        isConditional: false
+                    }
+                ],
+                onWizardComplete: (templateData) => {
+                    console.log('Wizard completed with template data:', templateData);
+                    // Optionally navigate to admin dashboard to see the new template
+                    this.switchSection('admin-dashboard');
+                },
+                onWizardCancel: () => {
+                    console.log('Wizard cancelled');
+                    // Optionally navigate back to admin dashboard
+                    this.switchSection('admin-dashboard');
+                }
+            });
+            console.log('TemplateUploadWizard initialized');
+        } else {
+            console.warn('TemplateUploadWizard or WizardStateManager class not available');
+        }
+    }
+
+    async loadCategories() {
+        try {
+            const response = await fetch('/api/categories');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.categories = await response.json();
+            this.populateCategoryFilter();
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            this.showNotification('Error loading categories', 'error');
+        }
+    }
+
+    populateCategoryFilter() {
+        const categoryFilter = document.getElementById('category-filter');
+        if (!categoryFilter) return;
+
+        // Clear existing options except "All Categories"
+        categoryFilter.innerHTML = '<option value="">All Categories</option>';
+        
+        // Add category options
+        this.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            categoryFilter.appendChild(option);
         });
     }
 
@@ -108,7 +485,34 @@ class TemplatePageEditor {
         this.currentSection = section;
 
         if (section === 'templates') {
-            this.renderTemplates();
+            // Set up search and filter event listeners if not already done
+            this.setupSearchAndFilter();
+            this.loadFilterState();
+            this.loadTemplates();
+        } else if (section === 'template-browser') {
+            // Initialize Template Browser Page if not already done
+            this.initializeTemplateBrowser();
+        } else if (section === 'admin-dashboard') {
+            // Initialize Admin Templates Dashboard if not already done
+            this.initializeAdminDashboard();
+        } else if (section === 'admin-categories') {
+            // Initialize Admin Category Manager if not already done
+            this.initializeAdminCategoryManager();
+        } else if (section === 'template-creation') {
+            // Initialize Template Creation Wizard if not already done
+            this.initializeTemplateCreationWizard();
+        } else if (section === 'template-metadata') {
+            // Initialize Template Metadata Form if not already done
+            this.initializeTemplateMetadataForm();
+        } else if (section === 'png-editor') {
+            // Initialize PNG Region Editor if not already done
+            this.initializePngRegionEditor();
+        } else if (section === 'shared-pages') {
+            // Initialize Shared Pages Dashboard if not already done
+            this.initializeSharedPagesDashboard();
+        } else if (section === 'template-upload-wizard') {
+            // Initialize Template Upload Wizard if not already done
+            this.initializeTemplateUploadWizard();
         }
     }
 
@@ -1715,8 +2119,6 @@ class TemplatePageEditor {
                 onClose: this.handleSaveVersionClose.bind(this)
             });
         }
-
-        console.log('Save Version components initialized');
     }
 
     /**
@@ -1868,7 +2270,7 @@ class TemplatePageEditor {
             toolbar.style.cssText = `
                 position: fixed;
                 top: 20px;
-                right: 20px;
+                left: 20px;
                 z-index: 1001;
                 display: flex;
                 gap: 10px;
@@ -2057,6 +2459,9 @@ class TemplatePageEditor {
             case 'test-page-editor':
                 this.testPageEditor();
                 break;
+            case 'png-editor':
+                this.switchSection('png-editor');
+                break;
             case 'version-history':
                 this.toggleVersionHistory();
                 break;
@@ -2098,25 +2503,37 @@ class TemplatePageEditor {
         previewWindow.document.close();
     }
 
-    saveTemplate() {
+    async saveTemplate() {
         try {
             // Create a new Page instance with structured data
             const page = this.serializeCanvasToPage();
             
             const templateData = {
-                id: Date.now(),
-                name: `Template ${this.templates.length + 1}`,
-                page: page.toJSON(),
-                html: document.getElementById('canvas').innerHTML, // Keep for backward compatibility
-                sourceFigmaFileUrl: null, // S3 URL for Figma export file
-                sourcePngFileUrl: null,   // S3 URL for PNG image file
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                name: `Template ${Date.now()}`,
+                description: `Template created on ${new Date().toLocaleDateString()}`,
+                categoryId: this.categories[0]?.id || '550e8400-e29b-41d4-a716-446655440001', // Default to first category
+                components: page.components || []
             };
 
-            this.templates.push(templateData);
-            this.saveTemplatesToStorage();
+            const response = await fetch('/api/templates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(templateData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const savedTemplate = await response.json();
             this.showNotification('Template saved successfully!');
+            
+            // Refresh templates if we're on the templates section
+            if (this.currentSection === 'templates') {
+                await this.loadTemplates();
+            }
         } catch (error) {
             console.error('Error saving template:', error);
             this.showNotification('Error saving template: ' + error.message, 'error');
@@ -2305,87 +2722,89 @@ class TemplatePageEditor {
         }
     }
 
-    loadTemplates() {
-        const saved = localStorage.getItem('templatePageEditor_templates');
-        if (saved) {
-            this.templates = JSON.parse(saved);
-            
-            // Ensure backward compatibility: initialize new fields for existing templates
-            this.templates = this.templates.map(template => ({
-                ...template,
-                sourceFigmaFileUrl: template.sourceFigmaFileUrl || null,
-                sourcePngFileUrl: template.sourcePngFileUrl || null,
-                updatedAt: template.updatedAt || template.createdAt || new Date().toISOString()
-            }));
-        }
-    }
-
-    saveTemplatesToStorage() {
-        localStorage.setItem('templatePageEditor_templates', JSON.stringify(this.templates));
-    }
-
-    async renderTemplates() {
-        const grid = document.getElementById('templates-grid');
-        grid.innerHTML = '<div style="text-align: center; color: #64748b; grid-column: 1 / -1;">Loading templates...</div>';
-
+    async loadTemplates() {
         try {
-            // Fetch templates from API
-            const response = await fetch('/api/templates');
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (this.currentSearchQuery) {
+                params.append('search', this.currentSearchQuery);
+            }
+            if (this.currentCategoryFilter) {
+                params.append('category', this.currentCategoryFilter);
+            }
+
+            const url = `/api/templates?${params.toString()}`;
+            console.log('Loading templates with URL:', url);
+            console.log('Search query:', this.currentSearchQuery);
+            console.log('Category filter:', this.currentCategoryFilter);
+
+            // Fetch templates from API with search and filter parameters
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const apiTemplates = await response.json();
             
-            // Also load local templates from localStorage
-            this.loadTemplates();
-            
-            // Combine API templates with local templates
-            const allTemplates = [...apiTemplates, ...this.templates];
-            
-            grid.innerHTML = '';
-
-            if (allTemplates.length === 0) {
-                grid.innerHTML = '<p style="text-align: center; color: #64748b; grid-column: 1 / -1;">No templates yet. Create your first template!</p>';
-                return;
-            }
-
-            allTemplates.forEach(template => {
-                const card = document.createElement('div');
-                card.className = 'template-card';
-                
-                // Build source files info
-                let sourceFilesInfo = '';
-                if (template.sourceFigmaFileUrl || template.sourcePngFileUrl) {
-                    sourceFilesInfo = '<div class="source-files-info" style="margin: 8px 0; font-size: 12px; color: #64748b;">';
-                    if (template.sourceFigmaFileUrl) {
-                        sourceFilesInfo += '<div><i class="fas fa-file-image"></i> Figma</div>';
-                    }
-                    if (template.sourcePngFileUrl) {
-                        sourceFilesInfo += '<div><i class="fas fa-image"></i> PNG</div>';
-                    }
-                    sourceFilesInfo += '</div>';
-                }
-                
-                // Determine if this is an API template or local template
-                const isApiTemplate = apiTemplates.some(apiT => apiT.id === template.id);
-                const templateType = isApiTemplate ? 'API Template' : 'Local Template';
-                
-                card.innerHTML = `
-                    <h3>${template.name}</h3>
-                    <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
-                    <p style="font-size: 12px; color: #64748b; margin: 4px 0;">${templateType}</p>
-                    ${sourceFilesInfo}
-                    <div class="template-actions">
-                        <button class="btn btn-primary" data-action="load-template" data-template-id="${template.id}" data-template-type="${isApiTemplate ? 'api' : 'local'}">Load</button>
-                        ${!isApiTemplate ? `<button class="btn" data-action="delete-template" data-template-id="${template.id}">Delete</button>` : ''}
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+            this.templates = await response.json();
+            console.log('Loaded templates:', this.templates.length);
+            await this.renderTemplates();
         } catch (error) {
             console.error('Error loading templates:', error);
-            grid.innerHTML = '<p style="text-align: center; color: #e53e3e; grid-column: 1 / -1;">Error loading templates. Please try again.</p>';
+            this.showNotification('Error loading templates', 'error');
         }
+    }
+
+
+    async renderTemplates() {
+        console.log('Rendering templates:', this.templates.length);
+        
+        // Fallback to old rendering system (for when new grid system is not available)
+        const grid = document.getElementById('templates-grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        if (this.templates.length === 0) {
+            const message = this.currentSearchQuery || this.currentCategoryFilter 
+                ? 'No templates found matching your search criteria.' 
+                : 'No templates yet. Create your first template!';
+            console.log('No templates found, showing message:', message);
+            grid.innerHTML = `<p style="text-align: center; color: #64748b; grid-column: 1 / -1;">${message}</p>`;
+            return;
+        }
+
+        this.templates.forEach(template => {
+            const card = document.createElement('div');
+            card.className = 'template-card';
+            
+            // Build source files info
+            let sourceFilesInfo = '';
+            if (template.sourceFigmaFileUrl || template.sourcePngFileUrl) {
+                sourceFilesInfo = '<div class="source-files-info" style="margin: 8px 0; font-size: 12px; color: #64748b;">';
+                if (template.sourceFigmaFileUrl) {
+                    sourceFilesInfo += '<div><i class="fas fa-file-image"></i> Figma</div>';
+                }
+                if (template.sourcePngFileUrl) {
+                    sourceFilesInfo += '<div><i class="fas fa-image"></i> PNG</div>';
+                }
+                sourceFilesInfo += '</div>';
+            }
+            
+            // Get category name
+            const category = this.categories.find(c => c.id === template.categoryId);
+            const categoryName = category ? category.name : 'Unknown Category';
+            
+            card.innerHTML = `
+                <h3>${template.name}</h3>
+                <p>Created: ${new Date(template.createdAt).toLocaleDateString()}</p>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0;">Category: ${categoryName}</p>
+                ${sourceFilesInfo}
+                <div class="template-actions">
+                    <button class="btn btn-primary" data-action="load-template" data-template-id="${template.id}" data-template-type="api">Load</button>
+                    <button class="btn" data-action="delete-template" data-template-id="${template.id}" data-template-type="api">Delete</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
     }
 
     async loadTemplate(id, templateType = 'local') {
@@ -3632,12 +4051,34 @@ class TemplatePageEditor {
         }
     }
 
-    deleteTemplate(id) {
+    async deleteTemplate(id, templateType = 'local') {
         if (confirm('Are you sure you want to delete this template?')) {
-            this.templates = this.templates.filter(t => t.id !== id);
-            this.saveTemplatesToStorage();
-            this.renderTemplates();
-            this.showNotification('Template deleted successfully!');
+            try {
+                if (templateType === 'api') {
+                    // Delete from API
+                    const response = await fetch(`/api/admin/templates/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } else {
+                    // This should not happen since we're only using API templates now
+                    throw new Error('Local template deletion not supported');
+                }
+                
+                // Remove from templates array
+                this.templates = this.templates.filter(t => t.id !== id);
+                
+                // Refresh the templates grid
+                await this.renderTemplates();
+                
+                this.showNotification('Template deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting template:', error);
+                this.showNotification('Error deleting template. Please try again.', 'error');
+            }
         }
     }
 
